@@ -41,6 +41,7 @@ print(y_test)
 # Here for train we fit and transform for test we only transformers
 # Meaning we get the mean and standard deviation using the fit on train
 # using the above formula, we transform the test
+# This is not needed for multiple linear regression model
 from sklearn.preprocessing import StandardScaler
 sc = StandardScaler()
 x_train[:, 3:] = sc.fit_transform(x_train[:, 3:])
