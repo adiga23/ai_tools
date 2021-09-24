@@ -48,3 +48,7 @@ x_train[:, 3:] = sc.fit_transform(x_train[:, 3:])
 x_test[:, 3:] = sc.transform(x_test[:, 3:])
 print(x_train)
 print(x_test)
+## This is used for inverse transform from feature scaling
+print(sc.inverse_transform(x_train[:, 3:]))
+## This is used to reshape y from horizontal to vertical
+y = y.reshape(len(y),1)
