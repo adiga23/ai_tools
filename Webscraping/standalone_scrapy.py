@@ -1,6 +1,9 @@
 import scrapy
 from scrapy.crawler import CrawlerProcess
 
+## Set this in the unix environment for printing the unicode characters
+#setenv PYTHONIOENCODING UTF-8
+
 class MySpider(scrapy.Spider):
     # Your spider definition
     name = 'countries'
