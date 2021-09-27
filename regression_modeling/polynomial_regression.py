@@ -27,7 +27,8 @@ lin_reg_2.fit(x_poly, y)
 # plt.plot(x, lin_reg.predict(x), color = 'blue')
 # plt.title('Truth or Bluff (Linear Regression)')
 # plt.xlabel('Position Level')
-# plt.ylabel('Salary')
+# plt.show()
+
 
 
 # Visualising the Polynomial Regression results
@@ -35,18 +36,18 @@ lin_reg_2.fit(x_poly, y)
 # plt.plot(x, lin_reg_2.predict(poly_reg.fit_transform(x)), color = 'blue')
 # plt.title('Truth or Bluff (Polynomial Regression)')
 # plt.xlabel('Position level')
-# plt.ylabel('Salary')
+# plt.show()
+
 
 
 # Visualising the Polynomial Regression results (for higher resolution and smoother curve)
-# x_grid = np.arange(min(x), max(x), 0.1)
-# x_grid = x_grid.reshape((len(x_grid), 1))
-# plt.scatter(x, y, color = 'red')
-# plt.plot(x_grid, lin_reg_2.predict(poly_reg.fit_transform(x_grid)), color = 'blue')
-# plt.title('Truth or Bluff (Polynomial Regression)')
-# plt.xlabel('Position level')
-# plt.ylabel('Salary')
-
+x_grid = np.arange(min(x), max(x), 0.1)
+x_grid = x_grid.reshape((len(x_grid), 1))
+plt.scatter(x, y, color = 'red')
+plt.plot(x_grid, lin_reg_2.predict(poly_reg.fit_transform(x_grid)), color = 'blue')
+plt.title('Truth or Bluff (Polynomial Regression)')
+plt.xlabel('Position level')
+plt.show()
 
 # Predicting a new result with Linear Regression
 print(lin_reg.predict([[6.5]]))

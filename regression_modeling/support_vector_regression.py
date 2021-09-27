@@ -28,12 +28,12 @@ regressor.fit(x, y)
 sc_y.inverse_transform(regressor.predict(sc_x.transform([[6.5]])))
 
 # Visualising the SVR results
-plt.scatter(sc_x.inverse_transform(x), sc_y.inverse_transform(y), color = 'red')
-plt.plot(sc_x.inverse_transform(x), sc_y.inverse_transform(regressor.predict(x)), color = 'blue')
-plt.title('Truth or Bluff (SVR)')
-plt.xlabel('Position level')
-plt.ylabel('Salary')
-plt.show()
+# plt.scatter(sc_x.inverse_transform(x), sc_y.inverse_transform(y), color = 'red')
+# plt.plot(sc_x.inverse_transform(x), sc_y.inverse_transform(regressor.predict(x)), color = 'blue')
+# plt.title('Truth or Bluff (SVR)')
+# plt.xlabel('Position level')
+# plt.ylabel('Salary')
+# plt.show()
 
 # Visualising the SVR results (for higher resolution and smoother curve)
 x_grid = np.arange(min(sc_x.inverse_transform(x)), max(sc_x.inverse_transform(x)), 0.1)
