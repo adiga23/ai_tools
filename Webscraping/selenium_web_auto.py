@@ -33,5 +33,4 @@ for result in results:
     print(result_descr)
     print(result_head)
 
-next_page=page_results.xpath("//li[@class='a-last']/a/@href")
 driver.quit()
