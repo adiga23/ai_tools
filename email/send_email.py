@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
+import time
 
 if os.name == "posix":
     #mac path
@@ -50,6 +51,7 @@ def gmail_login(driver):
     element_click(driver,"//div[@id='identifierNext']")
     ## Enter Password
     element_click_send_key(driver,"//input[@name='password']","obsessed_worker")
+    time.sleep(2)
     ## Click Next
     element_click(driver,"//div[@id='passwordNext']")
 
@@ -69,9 +71,9 @@ def compose_email(driver,to,subject,message):
 
 def logout(driver):
     ## Click on the account
-    element_click(driver,"//a[@class='gb_C gb_Ma gb_h']")
+    element_click(driver,"//a[contains(@aria-label,'Google Account:') and @role='button']")
     ## get the src to logout
-    get_next_src(driver,"//div[@class='gb_Pf gb_Bb']/a")
+    get_next_src(driver,"//a[text()='Sign out']")
     ## wait for the logout
     element_present(driver,"//div[text()='Use another account']")
 
