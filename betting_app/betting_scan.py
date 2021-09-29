@@ -78,7 +78,7 @@ def logout(driver):
     element_present(driver,"//div[text()='Use another account']")
 
 firefox_option = Options()
-firefox_option.add_argument("--headless")
+#firefox_option.add_argument("--headless")
 firefox_option.add_argument("--window-size=1920,1080")
 firefox_option.add_argument("--incognito")
 
