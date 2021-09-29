@@ -9,8 +9,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
 
-
-firefox_path = "C:\Personal\studies\geckodriver.exe"
+if os.name == "posix":
+    #mac path
+    firefox_path = "/Users/raga/python_scripts/geckodriver"
+else:
+    firefox_path = "C:\Personal\studies\geckodriver.exe"
 
 def element_click_send_key(driver,id,data):
     element = WebDriverWait(driver, 30).until(
