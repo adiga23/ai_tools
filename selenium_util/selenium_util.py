@@ -7,12 +7,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import Select
 from datetime import date, datetime
 import json
 import os
 import keyring
 from pprint import pprint
 import time
+
+def view_element(driver,element):
+    driver.execute_script("arguments[0].scrollIntoView();",element)
+
+def get_element_src(element):
+    return(element.get_attribute('innerHTML'))
 
 def element_click_send_key(driver,id,data):
     element = WebDriverWait(driver, 30).until(
@@ -22,7 +29,7 @@ def element_click_send_key(driver,id,data):
     return
 
 def element_view(element):
-    driver.execute_script("arguments[0].scrollIntoView();",element)
+    element.execute_script("arguments[0].scrollIntoView();",element)
 
 def element_clikable(element):
     temp_element = WebDriverWait(driver, 30).until(
@@ -73,3 +80,16 @@ def open_firefox_driver_gui(exec_path):
 
     driver = webdriver.Firefox(options=firefox_option,service=s)
     return(driver)
+
+## Select element from the scroll list
+select = Select(driver.find_element_by_id('fruits01'))
+
+# select by visible text
+select.select_by_visible_text('Banana')
+
+# select by value 
+select.select_by_value('1')
+
+## switch frame
+
+driver.switch_to.frame(<num>)
