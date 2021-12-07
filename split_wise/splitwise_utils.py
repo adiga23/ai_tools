@@ -66,7 +66,14 @@ def splitwise_login(driver):
     element_click_send_key(driver,"//input[@type='password']",gmail_pass)
     element_click(driver,"//input[@type='submit']")
     time.sleep(4)
-    element_click(driver,"//a[./span='Archana G Upadhya']")
+    try:
+        element_click(driver,"//a[./div='Archana G Upadhya']")
+    except:
+        pass
+    try:
+        element_click(driver,"//a[./span='Archana G Upadhya']")
+    except:
+        pass
     pass
 
 def add_expense(driver,name,amount,i_paid):
