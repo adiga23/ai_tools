@@ -75,6 +75,11 @@ def issue_to_dict(issue):
     except:
         pass
 
+    dict["labels"] = []
+
+    for label in issue.fields.labels:
+        dict["labels"].append(label)
+
     dict["assignee"] = {"user_id"   : issue.fields.assignee.name,
                         "full_name" : issue.fields.assignee.displayName,
                         "email_id"  : issue.fields.assignee.emailAddress}
@@ -85,7 +90,7 @@ def issue_to_dict(issue):
     dict["summary"] = issue.fields.summary
     return(dict)
 
-def get_all_open_actions(user_ids):
+def get_all_open_actions(user_ids,project):
     user_name = keyring.get_password("system","usr")
     jira = JIRA(options={'server':"https://jira.arm.com/"},basic_auth=(user_name,keyring.get_password("system",user_name)))
     assignee = "("
@@ -95,13 +100,15 @@ def get_all_open_actions(user_ids):
         if index != len(user_ids):
             assignee += " OR "
     assignee += ")"
-    jira_issues = jira.search_issues(f"{assignee} AND Resolution = Unresolved AND Type = Action")
+    jira_issues = jira.search_issues(f"{assignee} AND Resolution = Unresolved AND Type = Action AND project = {project}",maxResults=1000)
     issues = []
+    if jira_issues.total > 1000:
+        return((True,None))
     for issue in jira_issues:
         issues.append(issue_to_dict(issue))
-    return(issues)
+    return(False,issues)
 
-def get_all_open_bugs(user_ids):
+def get_all_open_bugs(user_ids,project):
     user_name = keyring.get_password("system","usr")
     jira = JIRA(options={'server':"https://jira.arm.com/"},basic_auth=(user_name,keyring.get_password("system",user_name)))
     assignee = "("
@@ -111,13 +118,15 @@ def get_all_open_bugs(user_ids):
         if index != len(user_ids):
             assignee += " OR "
     assignee += ")"
-    jira_issues = jira.search_issues(f"{assignee} AND Resolution = Unresolved AND Type = Bug")
+    jira_issues = jira.search_issues(f"{assignee} AND Resolution = Unresolved AND Type = Bug AND project = {project}",maxResults=1000)
     issues = []
+    if jira_issues.total > 1000:
+        return((True,None))
     for issue in jira_issues:
         issues.append(issue_to_dict(issue))
-    return(issues)  
+    return(False,issues)  
 
-def get_all_open_tasks(user_ids):
+def get_all_open_tasks(user_ids,project):
     user_name = keyring.get_password("system","usr")
     jira = JIRA(options={'server':"https://jira.arm.com/"},basic_auth=(user_name,keyring.get_password("system",user_name)))
     assignee = "("
@@ -127,12 +136,14 @@ def get_all_open_tasks(user_ids):
         if index != len(user_ids):
             assignee += " OR "
     assignee += ")"
-    jira_issues = jira.search_issues(f"{assignee} AND Resolution = Unresolved AND Type = 'Scheduled Task'")
+    jira_issues = jira.search_issues(f"{assignee} AND Resolution = Unresolved AND Type = 'Scheduled Task' AND project = {project}",maxResults=1000)
+    if jira_issues.total > 1000:
+        return((True,None))
     issues = []
     for issue in jira_issues:
         issue = jira.issue(issue.key)
         issues.append(issue_to_dict(issue))
-    return(issues) 
+    return((False,issues)) 
 
 
 def create_jira_info_content(sheet,open_actions,actions_jira_ids):
@@ -163,6 +174,11 @@ def create_jira_info_content(sheet,open_actions,actions_jira_ids):
             content['Comments'] = sheet['content'][index]['Comments']
         else:
             content.update({"Comments" : ""})
+
+        labels = ""
+        for label in action["labels"]:
+            labels += f" {label}"
+        content.update({"Labels": labels})
         mod_sheet['content'].append(content)
     return(mod_sheet)
 
@@ -240,7 +256,7 @@ class JIRAUSER():
 
     ## Function gets all the open tasks for a user
     def get_all_open_task(self):
-        jira_issues = self.jira.search_issues(f"assignee = {self.user_id} AND Resolution = Unresolved AND Type = 'Scheduled Task'")
+        jira_issues = self.jira.search_issues(f"assignee = {self.user_id} AND Resolution = Unresolved AND Type = 'Scheduled Task' AND project = PJ02932")
         self.issues = []
         for issue in jira_issues:
             self.issues.append(self.issue_to_dict(issue))
