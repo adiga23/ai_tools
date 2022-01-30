@@ -35,7 +35,7 @@ def write_dict_to_excel(file="",content=[]):
         for row in range(1,workbook[sheet_name].max_row+1):
             for col in range(1,workbook[sheet_name].max_column+1):
                 workbook[sheet_name].cell(row,col).value = None
-        
+
         # Fill the first row of the Excel sheet
         valid_index = 1
         for index in range(0,len(sheet['col_list'])):
@@ -148,79 +148,29 @@ def get_car_dict(car_type,status_dict):
                                                 'Comments'  : entry['Comments'] }})
         else:
             mod_status_dict.append(sheet)
-    
+
+
     try:
-        exec_path = "/Users/ragban01/geckodriver"
+        exec_path = "/Users/raga/python_scripts/geckodriver"
         firefox_option = Options()
         firefox_option.add_argument("--window-size=1920,1080")
         firefox_option.add_argument("--incognito")
         firefox_option.add_argument("--headless")
         s=Service(executable_path=exec_path,log_path=os.devnull)
         driver = webdriver.Firefox(options=firefox_option,service=s)
-        # driver.get("https://www.autotrader.co.uk/")
-        # element_click_send_key(driver,"//input[@id='postcode']","CB19YG")
-        # time.sleep(4)
-        # element_click(driver,"//select[@id='make']")
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='make']"))
-        # select.select_by_value(car_type)
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='minPrice']"))
-        # select.select_by_value('12000')
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='maxPrice']"))
-        # select.select_by_value('20000')
-        # element_click(driver,"//a[contains(text(),'More options')]")
-        # time.sleep(1)
-        # element_click(driver,"//li[3]/label/span")
-        # time.sleep(1)
-        # element_view(driver,"//select[@id='maxMileage']")
-        # time.sleep(1)
-        # #element_click(driver,"//select[@id='maxMileage']")
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='maxMileage']"))
-        # select.select_by_value('50000')
-        # element_view(driver,"//select[@id='transmission']")
-        # time.sleep(1)
-        # #element_click(driver,"//select[@id='transmission']")
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='transmission']"))
-        # select.select_by_value('Automatic')
-        # element_view(driver,"//select[@id='minYear']")
-        # time.sleep(1)
-        # #element_click(driver,"//select[@id='minYear']")
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='minYear']"))
-        # select.select_by_value('2014')
-        # element_view(driver,"//select[@id='minEngineSizeLitres']")
-        # time.sleep(1)
-        # #element_click(driver,"//select[@id='minEngineSizeLitres']")
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='minEngineSizeLitres']"))
-        # try:
-        #     select.select_by_value('2.0')
-        # except:
-        #     print("Could not find 2 lt engine")
-        #     return(None)
-        # element_view(driver,"//select[@id='minEnginePower']")
-        # time.sleep(1)
-        # #element_click(driver,"//select[@id='minEnginePower']")
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='minEnginePower']"))
-        # try:
-        #     select.select_by_value('150')
-        # except:
-        #     print("Could not find 150 cc engine")
-        #     return(None)
-        # element_view(driver,"//label[@for='emissionScheme']")
-        # time.sleep(1)
-        # element_click(driver,"//label[@for='emissionScheme']/span")
-        # element_view(driver,"//select[@id='showWriteOff']")
-        # time.sleep(1)
-        # #element_click(driver,"//select[@id='showWriteOff']")
-        # select = Select(driver.find_element(By.XPATH,"//select[@id='showWriteOff']"))
-        # try:
-        #     select.select_by_value('false')
-        # except:
-        #     print("Could not find non-cat vehicles")
-        #     return(None)
-        #element_click(driver,"//button[contains(@data-gui,'cars')]")
+
+        driver.get(f"https://www.autotrader.co.uk/car-search?postcode=CB19YG&make={car_type}&price-from=12000&price-to=20000&include-delivery-option=on&body-type=SUV&maximum-mileage=50000&transmission=Automatic&year-from=2015&minimum-badge-engine-size=2.0&min-engine-power=150&ulez-compliant=on&exclude-writeoff-categories=on&advertising-location=at_cars&keywords=cruise&keywords=leather")
+        try:
+            element = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.XPATH, ".//button[text()='Accept All']"))
+            )  
+            element.click()
+        except:
+            pass
 
         driver.get(f"https://www.autotrader.co.uk/car-search?postcode=CB19YG&make={car_type}&price-from=12000&price-to=20000&include-delivery-option=on&body-type=SUV&maximum-mileage=50000&transmission=Automatic&year-from=2015&minimum-badge-engine-size=2.0&min-engine-power=150&ulez-compliant=on&exclude-writeoff-categories=on&advertising-location=at_cars&keywords=cruise&keywords=leather")
 
-
+       
         ## Get all the list of the cars as keys which is a id from which
         ## we can form a link to get the car
         car_list={}
@@ -237,26 +187,22 @@ def get_car_dict(car_type,status_dict):
             else:
                 driver.get(next_page)
 
-        
         for id in car_list.keys():
-
             print(f"Getting data for {id}")
             time.sleep(2)
             driver.get(car_list[id]["link"])
             element = WebDriverWait(driver, 30).until(
                         EC.presence_of_element_located((By.XPATH, "//h2[@data-gui='advert-price']"))
                     )
-
             price = re.sub(r'.*?(\d+)',r'\1',element.text)
-            
-
             try:
                 mileage = WebDriverWait(driver, 30).until(
                             EC.presence_of_element_located((By.XPATH, "//span[@data-gui='mileage']"))
                         )
-                mileage = mileage.text
+                #mileage = mileage.text
+                print(f"I am here {mileage.text}")
             except:
-                mileage = "0 miles"    
+                mileage = "0 miles"
 
             try:
                 car_model = WebDriverWait(driver, 30).until(
@@ -265,7 +211,7 @@ def get_car_dict(car_type,status_dict):
                 car_model = car_model.text
             except:
                 car_model = "Unknown"
-            try:        
+            try:
                 registration = WebDriverWait(driver, 30).until(
                             EC.presence_of_element_located((By.XPATH, "//p[contains(@class,'sc-jgrJph khASqk')]"))
                             )
@@ -283,7 +229,6 @@ def get_car_dict(car_type,status_dict):
                 market_cmp=driver.find_element(By.XPATH,"//div[contains(@class,'atc-type-smart--medium')]").text
             except:
                 market_cmp = ""
-            
             car_details={'Link'      : f'=HYPERLINK("https://www.autotrader.co.uk/car-details/{id}","{id}")',
                         'Price'     : price,
                         'Year'      : registration,
@@ -293,7 +238,6 @@ def get_car_dict(car_type,status_dict):
                         'Price cmp' : market_cmp,
                         'mileage'   : mileage,
                         'Comments'  : ""}
-
             car_details_new={'Link'      : f'=HYPERLINK("https://www.autotrader.co.uk/car-details/{id}","{id}")',
                             'Price'     : price,
                             'Year'      : registration,
@@ -301,9 +245,8 @@ def get_car_dict(car_type,status_dict):
                             'Car Model' : car_model,
                             'Distance'  : car_list[id]["distance"],
                             'Price cmp' : market_cmp,
+                            'mileage'   : mileage,
                             'Comments'  : ""}
-            
-
             if id in existing_ids.keys():
                 car_details['Comments'] = existing_ids[id]['Comments']
                 content.append(car_details)
@@ -328,7 +271,7 @@ def get_car_dict(car_type,status_dict):
             sheet['content'] = content
     return(mod_status_dict)
 
-status_file = "/Users/ragban01/status_trackers/car_prices.xlsx"
+status_file = "car_prices.xlsx"
 
 status_dict = read_dict_from_excel(status_file)
 
@@ -346,6 +289,10 @@ f.close()
 trigger_parse = (len(lines) == 0) or \
                 (now != lines[0])
 
+mod_status_dict = get_car_dict('Audi',status_dict)
+pprint(mod_status_dict)
+
+trigger_parse = False
 if trigger_parse:
     error_found = False
     print("Getting details for Audi")
@@ -382,11 +329,10 @@ if trigger_parse:
         write_dict_to_excel(status_file,status_dict)
     except:
         error_found = True
-    
+
     if not error_found:
         f = open('timestamp','w')
         f.write(now)
         f.close()
 else:
     print("Not updating car prices")
-
