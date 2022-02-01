@@ -1,3 +1,4 @@
+from sre_constants import SUCCESS
 import scrapy
 import os
 from scrapy import Selector
@@ -9,6 +10,36 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
 import time
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import json
+import os
+
+def send_email(to_email,subject,msg):
+    HOME = os.getenv("HOME")
+    with open(f"{HOME}/pass_info.json",'r') as f:
+        pass_info = json.load(f)
+    python_account = pass_info["pygmail"]["username"]
+    python_password = pass_info["pygmail"]["password"]
+
+    message = MIMEMultipart("alternative")
+    message["Subject"] = subject
+    message["From"] = python_account
+    message["To"] = to_email
+    message.attach(MIMEText(msg,"html"))
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com',465)
+        server.ehlo()
+        server.login(python_account,python_password)
+        server.sendmail(python_account,to_email,message.as_string())
+        server.close()
+        success = True
+    except:
+        success = False
+    return(success)
+
 
 if os.name == "posix":
     #mac path
