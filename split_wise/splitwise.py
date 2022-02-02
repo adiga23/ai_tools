@@ -44,19 +44,7 @@ def element_present(driver,id):
 
 def open_driver(exec_path):
     chrome_option = Options()
-    chrome_option.add_argument("--window-size=1920,1080")
-    chrome_option.add_argument("--incognito")
-
-    s=Service(executable_path=exec_path,log_path=os.devnull)
-
-    driver = webdriver.Chrome(options=chrome_option,service=s)
-    return(driver)
-
-def open_driver_headless(exec_path):
-    chrome_option = Options()
-    chrome_option.add_argument("--headless")
-    chrome_option.add_argument("--window-size=1920,1080")
-    chrome_option.add_argument("--incognito")
+    chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 
     s=Service(executable_path=exec_path,log_path=os.devnull)
 
@@ -70,9 +58,13 @@ def splitwise_login(driver):
         pass_info = json.load(f)
     gmail_id = pass_info["mygmail"]["username"]
     gmail_pass = pass_info["mygmail"]["password"]
-    element_click_send_key(driver,"//input[@type='email']",gmail_id)
-    element_click_send_key(driver,"//input[@type='password']",gmail_pass)
-    element_click(driver,"//input[@type='submit']")
+    try:
+        element_click_send_key(driver,"//input[@type='email']",gmail_id)
+        element_click_send_key(driver,"//input[@type='password']",gmail_pass)
+        element_click(driver,"//input[@type='submit']")
+    except:
+        pass
+
     time.sleep(4)
     try:
         element_click(driver,"//a[./div='Archana G Upadhya']")
@@ -121,25 +113,20 @@ driver_path = f"{HOME}/webdriver/chromedriver"
 if curr_date.month != last_update_date.month:
     update_success = False
     try:
-        driver = open_driver_headless(driver_path)
+        driver = open_driver(driver_path)
         splitwise_login(driver)
         for key in expenses.keys():
             time.sleep(4)
             add_expense(driver,key,expenses[key]['amount'],(expenses[key]['i_paid'] == 1))
         logging.info(f"{now} : updated the expenses")
-        driver.quit()
         update_success = True
     except:
         logging.info(f"{now} : Fault in accessing splitwise")
+
     if update_success:
-        f=open("last_update.txt",'w')
+        f=open(f"{HOME}/script_stat/splitwise/last_update.txt",'w')
         f.write(datetime.now().strftime('%d/%m/%Y'))
         f.close()
-    try:
-        driver.quit()
-    except:
-        pass
-
 else:
     logging.info(f"{now} : Not updating the expenses")
 
