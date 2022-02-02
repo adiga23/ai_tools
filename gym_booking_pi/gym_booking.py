@@ -77,9 +77,8 @@ try:
     if not booking_exempt:
         chrome_path = f"{HOME}/webdriver/chromedriver"
         chrome_option = Options()
-        chrome_option.add_argument("--headless")
-        chrome_option.add_argument("--window-size=1920,1080")
-        chrome_option.add_argument("--incognito")
+        chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+
         s=Service(executable_path=chrome_path,log_path=os.devnull)
         driver = webdriver.Chrome(options=chrome_option,service=s)
         f = open(f"{HOME}/script_stat/gym_booking/user_info.json","r")
@@ -105,7 +104,7 @@ try:
                     now = datetime.now()
                     now = now.strftime('%d/%m/%Y:%H:%M')
                     logging.info(f"{now} Booked Gym for {name} slot {time_slot}")
-        f=open(f"{HOME}/script_state/gym_booking/last_update.txt",'w')
+        f=open(f"{HOME}/script_stat/gym_booking/last_update.txt",'w')
         f.write(datetime.now().strftime('%d/%m/%Y'))
         f.close()
     else:
@@ -116,11 +115,6 @@ except:
     now = datetime.now()
     now = now.strftime('%d/%m/%Y:%H:%M')
     logging.info(f"{now} Some problem occurred while booking")
-
-try:
-    driver.quit()
-except:
-    pass
 
 lock.release()
 logging.info(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
