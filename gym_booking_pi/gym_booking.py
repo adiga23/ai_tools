@@ -70,10 +70,6 @@ lock = FileLock(f"{HOME}/serialise")
 lock.acquire()
 
 logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-driver.get("https://outlook.office365.com/owa/calendar/CambridgeGym@arm.com/bookings/")
-a=input("Adiga")
-driver.quit()
-exit()
 
 if curr_date.day == last_update_date.day:
     booking_exempt = True
