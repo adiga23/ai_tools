@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service, service
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service, service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -70,17 +70,24 @@ lock = FileLock(f"{HOME}/serialise")
 lock.acquire()
 
 logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+driver.get("https://outlook.office365.com/owa/calendar/CambridgeGym@arm.com/bookings/")
+a=input("Adiga")
+driver.quit()
+exit()
 
 if curr_date.day == last_update_date.day:
     booking_exempt = True
 try:
     if not booking_exempt:
-        chrome_path = f"{HOME}/webdriver/chromedriver"
-        chrome_option = Options()
-        chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+        firefox_path = f"{HOME}/webdriver/geckodriver"
+        firefox_option = Options()
+        firefox_option.add_argument("--headless")
+        firefox_option.add_argument("--window-size=1920,1080")
+        firefox_option.add_argument("--incognito")
+        s=Service(executable_path=firefox_path,log_path=os.devnull)
+        driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
+                                   service_log_path=os.devnull)
 
-        s=Service(executable_path=chrome_path,log_path=os.devnull)
-        driver = webdriver.Chrome(options=chrome_option,service=s)
         f = open(f"{HOME}/script_stat/gym_booking/user_info.json","r")
         user_info = json.load(f)
         f.close()
@@ -116,5 +123,9 @@ except:
     now = now.strftime('%d/%m/%Y:%H:%M')
     logging.info(f"{now} Some problem occurred while booking")
 
+try:
+    driver.quit()
+except:
+    pass
 lock.release()
 logging.info(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
