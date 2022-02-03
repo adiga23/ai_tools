@@ -93,3 +93,25 @@ select.select_by_value('1')
 ## switch frame
 
 driver.switch_to.frame(<num>)
+
+## Older version code :
+firefox_path = f"{HOME}/webdriver/geckodriver"
+firefox_option = Options()
+#firefox_option.add_argument("--headless")
+firefox_option.add_argument("--window-size=1920,1080")
+firefox_option.add_argument("--incognito")
+s=Service(executable_path=firefox_path,log_path=os.devnull)
+#driver = webdriver.Firefox(options=firefox_option,service=s)
+driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
+                           service_log_path=os.devnull)
+driver.get("https://outlook.office365.com/owa/calendar/CambridgeGym@arm.com/bookings/")
+a=input("Adiga")
+driver.quit()
+
+## Newer version of code
+        chrome_path = f"{HOME}/webdriver/chromedriver"
+        chrome_option = Options()
+        chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+
+        s=Service(executable_path=chrome_path,log_path=os.devnull)
+        driver = webdriver.Chrome(options=chrome_option,service=s)
