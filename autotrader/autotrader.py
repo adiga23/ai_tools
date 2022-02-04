@@ -1,8 +1,8 @@
 from hashlib import new
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service, service
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service, service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -95,17 +95,29 @@ def get_car_dict(car_type,current_dict):
 
     try:
         HOME = os.getenv("HOME")
-        exec_path = f"{HOME}/webdriver/chromedriver"
-        chrome_option = Options()
-        chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
-
-        s=Service(executable_path=exec_path,log_path=os.devnull)
-        driver = webdriver.Chrome(options=chrome_option,service=s)
+        firefox_path = f"{HOME}/webdriver/geckodriver"
+        firefox_option = Options()
+        #firefox_option.add_argument("--headless")
+        firefox_option.add_argument("--window-size=1920,1080")
+        firefox_option.add_argument("--incognito")
+        driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
+                                   service_log_path=os.devnull)
     
 
         driver.get(f"https://www.autotrader.co.uk/car-search?postcode=CB19YG&make={car_type}&price-from=12000&price-to=20000&include-delivery-option=on&body-type=SUV&maximum-mileage=50000&transmission=Automatic&year-from=2016&minimum-badge-engine-size=2.0&min-engine-power=150&ulez-compliant=on&exclude-writeoff-categories=on&advertising-location=at_cars&keywords=cruise")
+        try:
+            element = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, ".//button[text()='Accept All']"))
+            )  
+            element.click()
+            print("Accepted cookies")
+        except:
+            pass
 
-        
+        time.sleep(10)
+        driver.get(f"https://www.autotrader.co.uk/car-search?postcode=CB19YG&make={car_type}&price-from=12000&price-to=20000&include-delivery-option=on&body-type=SUV&maximum-mileage=50000&transmission=Automatic&year-from=2015&minimum-badge-engine-size=2.0&min-engine-power=150&ulez-compliant=on&exclude-writeoff-categories=on&advertising-location=at_cars&keywords=cruise&keywords=leather")
+
+        exit() 
         # Get all the list of the cars as keys which is a id from which
         # we can form a link to get the car
         car_list={}
@@ -203,17 +215,20 @@ if os.path.exists(f"{HOME}/script_stat/autotrader/prev_data.json"):
 else:
     prev_data_dict= {}
 
-
+print("i am here")
 new_dict_audi = get_car_dict("Audi",prev_data_dict)
+exit()
 
 new_dict_benz = get_car_dict("Mercedes-Benz",prev_data_dict)
 
 HOME = os.getenv("HOME")
-exec_path = f"{HOME}/webdriver/chromedriver"
-chrome_option = Options()
-chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
-s=Service(executable_path=exec_path,log_path=os.devnull)
-driver = webdriver.Chrome(options=chrome_option,service=s)
+firefox_path = f"{HOME}/webdriver/geckodriver"
+firefox_option = Options()
+#firefox_option.add_argument("--headless")
+firefox_option.add_argument("--window-size=1920,1080")
+firefox_option.add_argument("--incognito")
+driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
+                           service_log_path=os.devnull)
 
 msg_audi = ""
 msg_benz = ""
