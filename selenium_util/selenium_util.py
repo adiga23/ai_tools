@@ -108,10 +108,18 @@ driver.get("https://outlook.office365.com/owa/calendar/CambridgeGym@arm.com/book
 a=input("Adiga")
 driver.quit()
 
-## Newer version of code
+## Newer version of code with deubbing
+         ## open chrome using
         chrome_path = f"{HOME}/webdriver/chromedriver"
         chrome_option = Options()
         chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 
         s=Service(executable_path=chrome_path,log_path=os.devnull)
         driver = webdriver.Chrome(options=chrome_option,service=s)
+
+some code for old and new
+
+if selenium.__version__ == "3.14.0" :
+    driver.find_element_by_xpath(id)
+else:
+    driver.find_element(By.XPATH,id)
