@@ -1,4 +1,5 @@
 from hashlib import new
+import selenium
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
@@ -59,10 +60,6 @@ def element_click_send_key(driver,id,data):
     element.send_keys(data)
     return
 
-def element_view(driver,id):
-    element = driver.find_element(By.XPATH,id)
-    driver.execute_script("arguments[0].scrollIntoView();",element)
-
 def element_click(driver,id):
     element = WebDriverWait(driver, 30).until(
               EC.element_to_be_clickable((By.XPATH, id))
@@ -77,13 +74,55 @@ def element_clikable(element):
     return
 
 def get_next_page(driver):
-    pages = driver.find_elements(By.XPATH,"//li[@class='pagination--li']")
+    if selenium.__version__ == "3.14.0":
+        pages = driver.find_elements_by_xpath("//li[@class='pagination--li']")
+    else:
+        pages = driver.find_elements(By.XPATH,"//li[@class='pagination--li']")
     num_pages = len(pages)
     try:
-        next_page_link=pages[num_pages-1].find_element(By.XPATH,".//a").get_attribute('href')
+        if selenium.__version__ == "3.14.0":
+            next_page_link=pages[num_pages-1].find_element_xpath(".//a").get_attribute('href')
+        else:
+            next_page_link=pages[num_pages-1].find_element(By.XPATH,".//a").get_attribute('href')
     except:
         next_page_link=None
     return(next_page_link)
+
+def accept_cookies(driver):
+    try:
+        ## Wait for the iframe to appear
+        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH,".//iframe[@id='sp_message_iframe_576092']")))
+        ## Switch to the iframe
+        if selenium.__version__ == "3.14.0":
+            driver.switch_to.frame(driver.find_element_by_xpath(".//iframe[@id='sp_message_iframe_576092']"))
+        else:
+            driver.switch_to.frame(driver.find_element(By.XPATH,".//iframe[@id='sp_message_iframe_576092']"))
+        ## Accept the cookie
+        element = WebDriverWait(driver, 30).until(
+        EC.presence_of_element_located((By.XPATH, ".//button[text()='Accept All']"))
+        )  
+        element.click()
+
+    except:
+        pass
+    ## Switch to the default frame
+    driver.switch_to.default_content()
+    return
+
+def open_driver():
+    HOME = os.getenv("HOME")
+    firefox_path = f"{HOME}/webdriver/geckodriver"
+    firefox_option = Options()
+    firefox_option.add_argument("--headless")
+    firefox_option.add_argument("--window-size=1920,1080")
+    #firefox_option.add_argument("--incognito")
+    if selenium.__version__ == "3.14.0":
+        driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
+                                   service_log_path=os.devnull)
+    else:
+        s=Service(executable_path=firefox_path,log_path=os.devnull)
+        driver = webdriver.Firefox(options=firefox_option,service=s)
+    return(driver)
 
 def get_car_dict(car_type,current_dict):
     logging.info(f"Getting details for car {car_type}")
@@ -94,35 +133,18 @@ def get_car_dict(car_type,current_dict):
     new_dict = {}
 
     try:
-        HOME = os.getenv("HOME")
-        firefox_path = f"{HOME}/webdriver/geckodriver"
-        firefox_option = Options()
-        #firefox_option.add_argument("--headless")
-        firefox_option.add_argument("--window-size=1920,1080")
-        firefox_option.add_argument("--incognito")
-        driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
-                                   service_log_path=os.devnull)
-    
-
+        driver = open_driver()
         driver.get(f"https://www.autotrader.co.uk/car-search?postcode=CB19YG&make={car_type}&price-from=12000&price-to=20000&include-delivery-option=on&body-type=SUV&maximum-mileage=50000&transmission=Automatic&year-from=2016&minimum-badge-engine-size=2.0&min-engine-power=150&ulez-compliant=on&exclude-writeoff-categories=on&advertising-location=at_cars&keywords=cruise")
-        try:
-            element = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, ".//button[text()='Accept All']"))
-            )  
-            element.click()
-            print("Accepted cookies")
-        except:
-            pass
+        accept_cookies(driver)
 
-        time.sleep(10)
-        driver.get(f"https://www.autotrader.co.uk/car-search?postcode=CB19YG&make={car_type}&price-from=12000&price-to=20000&include-delivery-option=on&body-type=SUV&maximum-mileage=50000&transmission=Automatic&year-from=2015&minimum-badge-engine-size=2.0&min-engine-power=150&ulez-compliant=on&exclude-writeoff-categories=on&advertising-location=at_cars&keywords=cruise&keywords=leather")
-
-        exit() 
         # Get all the list of the cars as keys which is a id from which
         # we can form a link to get the car
         car_list={}
         while True:
-            page_list = driver.find_elements(By.XPATH,"//li[@class='search-page__result']")
+            if selenium.__version__ == "3.14.0":
+                page_list = driver.find_elements_by_xpath("//li[@class='search-page__result']")
+            else:
+                page_list = driver.find_elements(By.XPATH,"//li[@class='search-page__result']")
             for car in page_list:
                 id = car.get_attribute('id')
                 distance = car.get_attribute('data-distance-value')
@@ -139,63 +161,10 @@ def get_car_dict(car_type,current_dict):
                                  "link" : car_list[id]["link"],
                                  "type" : "old" if id in existing_ids else "new"}})
 
-        # for id in car_list.keys():
-        #     logging.info(f"Getting data for {id}")
-        #     driver.get(car_list[id]["link"])
-        #     time.sleep(4)
-        #     element = WebDriverWait(driver, 30).until(
-        #                 EC.presence_of_element_located((By.XPATH, ".//h2[@data-gui='advert-price']"))
-        #             )
-        #     price = re.sub(r'.*?(\d+)',r'\1',element.text)
-
-        #     try:
-        #         mileage = WebDriverWait(driver, 1).until(
-        #                     EC.presence_of_element_located((By.XPATH, ".//span[@data-gui='mileage']"))
-        #                 )
-        #         mileage = mileage.text
-        #     except:
-        #         mileage = "0 miles"
-
-        #     try:
-        #         car_model = WebDriverWait(driver, 1).until(
-        #                     EC.presence_of_element_located((By.XPATH, ".//h1[@data-gui='advert-title']"))
-        #                 )
-        #         car_model = car_model.text
-        #     except:
-        #         car_model = "Unknown"
-
-        #     try:
-        #         car_model_section = WebDriverWait(driver, 1).until(
-        #                     EC.presence_of_element_located((By.XPATH, ".//section[.//h1[@data-gui='advert-title']]"))
-        #                 )                
-        #         p_list = car_model_section.find_elements(By.XPATH,".//p")
-        #         registration = p_list[0].text
-        #         car_make = p_list[1].text
-        #     except:
-        #         registration = "unknown"
-        #         car_make = "unknown"
-        #     try:
-        #         market_cmp=driver.find_element(By.XPATH,".//div[contains(@class,'atc-type-smart--medium')]").text
-        #     except:
-        #         market_cmp = ""
-
-        #     car_details={'Link'      : f"https://www.autotrader.co.uk/car-details/{id}",
-        #                  'Price'     : price,
-        #                  'Year'      : registration,
-        #                  'Car make'  : car_make,
-        #                  'Car Model' : car_model,
-        #                  'Distance'  : car_list[id]["distance"],
-        #                  'Price cmp' : market_cmp,
-        #                  'mileage'   : mileage,
-        #                  'new'       : False,
-        #                  'price_change' : False}
-
-        #     if id in existing_ids:
-        #         if price != current_dict[id]['Price']:
-        #             car_details['price_change'] = True
-        #     else:
-        #         car_details["new"] = True
-        #     new_dict.update({id:car_details.copy()})
+        try:
+            driver.quit()
+        except:
+            pass
             
     except:
         logging.info(f"Issue getting details for car {car_type}")
@@ -215,20 +184,16 @@ if os.path.exists(f"{HOME}/script_stat/autotrader/prev_data.json"):
 else:
     prev_data_dict= {}
 
-print("i am here")
+
 new_dict_audi = get_car_dict("Audi",prev_data_dict)
-exit()
 
 new_dict_benz = get_car_dict("Mercedes-Benz",prev_data_dict)
 
-HOME = os.getenv("HOME")
-firefox_path = f"{HOME}/webdriver/geckodriver"
-firefox_option = Options()
-#firefox_option.add_argument("--headless")
-firefox_option.add_argument("--window-size=1920,1080")
-firefox_option.add_argument("--incognito")
-driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
-                           service_log_path=os.devnull)
+
+driver = open_driver()
+driver.get("https://www.autotrader.co.uk")
+accept_cookies(driver)
+time.sleep(5)
 
 msg_audi = ""
 msg_benz = ""
@@ -247,7 +212,7 @@ for key in new_dict_audi.keys():
         if price <= 20000:
             logging.info(f'Adding {key} to list with price {price}')
             audi_found = True
-            msg_audi += f"<a href='{new_dict_audi[key]['link']}'><u>{key}</u></a> distance {new_dict_audi[key]['distance']}<br>"
+            msg_audi += f"<a href='{new_dict_audi[key]['link']}'><u>{key}</u></a> distance {new_dict_audi[key]['distance']} price {price}<br>"
 
 if msg_audi:
    msg += "<html> <body> <h2><b><u> Audi </u></b></h2><br>" + msg_audi
@@ -257,7 +222,8 @@ benz_found = False
 for key in new_dict_benz.keys():
     if new_dict_benz[key]["type"] == "new":
         driver.get(new_dict_benz[key]['link'])
-        time.sleep(4)
+        time.sleep(5)
+        
         element = WebDriverWait(driver, 30).until(
                     EC.presence_of_element_located((By.XPATH, ".//h2[@data-gui='advert-price']"))
                   )
@@ -266,14 +232,14 @@ for key in new_dict_benz.keys():
         if price <= 20000:
             logging.info(f'Adding {key} to list with price {price}')
             benz_found = True
-            msg_benz += f"<a href='{new_dict_benz[key]['link']}'><u>{key}</u></a> distance {new_dict_benz[key]['distance']}<br>"
+            msg_benz += f"<a href='{new_dict_benz[key]['link']}'><u>{key}</u></a> distance {new_dict_benz[key]['distance']} price {price}<br>"
 
 if msg_benz:
     msg += "<br><h2><b><u> Mercedes </u></b></h2><br><br>" + msg_benz
 
 if audi_found or benz_found:
     send_email("adiga23@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
-    send_email("archanag4ever@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+    #send_email("archanag4ever@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
 else:
     logging.info("No new cars")
 
@@ -283,6 +249,10 @@ new_dict.update(new_dict_benz)
 with open(f"{HOME}/script_stat/autotrader/prev_data.json","w") as f:
     json.dump(new_dict,f)
 
+try:
+    driver.quit()
+except:
+    pass
 logging.info(f"Autotrader script released lock on {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
 lock.release()
 
