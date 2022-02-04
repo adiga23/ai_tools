@@ -1,3 +1,4 @@
+import selenium
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
@@ -49,11 +50,20 @@ def element_click(driver,id):
     return
 
 def find_time_element(input_element,text):
-    list_elements = input_element.find_elements(By.XPATH,".//li")
+    if selenium.__version__ == "3.14.0":
+        list_elements = input_element.find_elements_by_xpath(".//li")
+    else:
+        list_elements = input_element.find_elements(By.XPATH,".//li")
     output_element = None
     for element in list_elements:
-        text_element = element.find_element(By.XPATH,".//span")
+        if selenium.__version__ == "3.14.0":
+            text_element = element.find_element_by_xpath(".//span")
+        else:
+            text_element = element.find_element(By.XPATH,".//span")
         if text_element.text == text:
+            element1 = WebDriverWait(element, 30).until(
+                       EC.element_to_be_clickable((By.XPATH, ".//span"))
+                       )
             output_element = element
             break
     return(output_element)
@@ -73,6 +83,7 @@ logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
 
 if curr_date.day == last_update_date.day:
     booking_exempt = True
+
 try:
     if not booking_exempt:
         firefox_path = f"{HOME}/webdriver/geckodriver"
@@ -95,15 +106,17 @@ try:
                 driver.get("https://outlook.office365.com/owa/calendar/CambridgeGym@arm.com/bookings/")
                 element_click(driver,"//label[@for='service_2']")
                 element_present(driver,"//div[@class='focusable timePicker']")
-                time_element = driver.find_element(By.XPATH,"//div[@class='focusable timePicker']")
+                if selenium.__version__ == "3.14.0":
+                    time_element = driver.find_element_by_xpath("//div[@class='focusable timePicker']")
+                else:    
+                    time_element = driver.find_element(By.XPATH,"//div[@class='focusable timePicker']")
                 element_view(time_element)
                 time_element = find_time_element(time_element,time_slot)
                 if time_element is not None:
-                    element_clikable(time_element)
                     time_element.click()
                     element_click_send_key(driver,"//input[@placeholder='Name']",name)
                     element_click_send_key(driver,"//input[@placeholder='Email']",email_id)
-                    element_click(driver,"//button[@class='bookButton']")
+                    #element_click(driver,"//button[@class='bookButton']")
                     now = datetime.now()
                     now = now.strftime('%d/%m/%Y:%H:%M')
                     logging.info(f"{now} Booked Gym for {name} slot {time_slot}")
