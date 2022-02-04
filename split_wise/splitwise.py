@@ -1,15 +1,16 @@
 import scrapy
 import os
 from scrapy import Selector
+import selenium
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from datetime import date, datetime, timedelta
 import time
-from selenium.webdriver.chrome.service import Service, service
+from selenium.webdriver.firefox.service import Service, service
 import sys
 import json
 from filelock import FileLock
@@ -43,12 +44,14 @@ def element_present(driver,id):
     return
 
 def open_driver(exec_path):
-    chrome_option = Options()
-    chrome_option.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
-
-    s=Service(executable_path=exec_path,log_path=os.devnull)
-
-    driver = webdriver.Chrome(options=chrome_option,service=s)
+    firefox_path = f"{HOME}/webdriver/geckodriver"
+    firefox_option = Options()
+    firefox_option.add_argument("--headless")
+    firefox_option.add_argument("--window-size=1920,1080")
+    firefox_option.add_argument("--incognito")
+    s=Service(executable_path=firefox_path,log_path=os.devnull)
+    driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
+                               service_log_path=os.devnull)
     return(driver)
 
 def splitwise_login(driver):
@@ -130,6 +133,10 @@ if curr_date.month != last_update_date.month:
 else:
     logging.info(f"{now} : Not updating the expenses")
 
+try:
+    driver.quit()
+except:
+    pass
 lock.release()
 
 logging.info(f"Splitwise Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
