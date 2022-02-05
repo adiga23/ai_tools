@@ -116,7 +116,7 @@ try:
                     time_element.click()
                     element_click_send_key(driver,"//input[@placeholder='Name']",name)
                     element_click_send_key(driver,"//input[@placeholder='Email']",email_id)
-                    #element_click(driver,"//button[@class='bookButton']")
+                    element_click(driver,"//button[@class='bookButton']")
                     now = datetime.now()
                     now = now.strftime('%d/%m/%Y:%H:%M')
                     logging.info(f"{now} Booked Gym for {name} slot {time_slot}")
