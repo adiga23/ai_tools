@@ -60,6 +60,7 @@ def element_click_send_key(driver,id,data):
     element.send_keys(data)
     return
 
+
 def element_click(driver,id):
     element = WebDriverWait(driver, 30).until(
               EC.element_to_be_clickable((By.XPATH, id))
@@ -136,30 +137,66 @@ def get_car_dict(car_type,current_dict):
         driver = open_driver()
         driver.get(f"https://www.autotrader.co.uk/car-search?postcode=CB19YG&make={car_type}&price-from=12000&price-to=20000&include-delivery-option=on&body-type=SUV&maximum-mileage=50000&transmission=Automatic&year-from=2016&minimum-badge-engine-size=2.0&min-engine-power=150&ulez-compliant=on&exclude-writeoff-categories=on&advertising-location=at_cars&keywords=cruise")
         accept_cookies(driver)
+        if selenium.__version__ == "3.14.0":
+            while(True):
+                time.sleep(4)
+                found_something_new = False
+                car_list = driver.find_elements_by_xpath(".//div[@class='product-card__wrapper']")
+                for car in car_list:
+                    driver.execute_script("arguments[0].scrollIntoView();",car)
+                    id = car.get_attribute('name')
+                    id = re.sub(r'.*?(\d+).*',r'\1',id)
+                    price_element = car.find_element_by_xpath(".//div[@class='product-card__pricing__price']/span")
+                    price = price_element.text
+                    price = re.sub(',','',price)
+                    price = int(re.sub(r'.*?(\d+).*',r'\1',price))
+                    spec_list = car.find_elements_by_xpath(".//li[@class='specs-list__item']")
+                    try:
+                        car_miles = spec_list[0].text
+                    except:
+                        car_miles = "unknown"
+                    try:
+                        car_reg = spec_list[1].text
+                    except:
+                        car_reg = "unknown"
+                    try:
+                        car_dist = spec_list[2].text
+                    except:
+                        car_dist = "unknown"
+                    car_type = "old" if id in existing_ids else "new"
+                    if id not in new_dict.keys():
+                        found_something_new = True
+                        new_dict.update({id : {"link"      : f"https://www.autotrader.co.uk/car-details/{id}",
+                                               "distance"  : car_dist,
+                                               "price"     : price,
+                                               "car_miles" : car_miles,
+                                               "car_reg"   : car_reg,
+                                               "type"      : car_type}})
 
-        # Get all the list of the cars as keys which is a id from which
-        # we can form a link to get the car
-        car_list={}
-        while True:
-            if selenium.__version__ == "3.14.0":
-                page_list = driver.find_elements_by_xpath("//li[@class='search-page__result']")
-            else:
+                if not found_something_new:
+                    break
+
+        else:
+            # Get all the list of the cars as keys which is a id from which
+            # we can form a link to get the car
+            car_list={}
+            while True:
                 page_list = driver.find_elements(By.XPATH,"//li[@class='search-page__result']")
-            for car in page_list:
-                id = car.get_attribute('id')
-                distance = car.get_attribute('data-distance-value')
-                car_list.update({f"{id}" : {"link" : f"https://www.autotrader.co.uk/car-details/{id}",
-                                        "distance" : distance}})
-            next_page = get_next_page(driver)
-            if next_page==None:
-                break
-            else:
-                driver.get(next_page)
+                for car in page_list:
+                    id = car.get_attribute('id')
+                    distance = car.get_attribute('data-distance-value')
+                    car_list.update({f"{id}" : {"link"     : f"https://www.autotrader.co.uk/car-details/{id}",
+                                                "distance" : distance}})
+                next_page = get_next_page(driver)
+                if next_page==None:
+                    break
+                else:
+                    driver.get(next_page)
 
-        for id in car_list.keys():
-            new_dict.update({id:{"distance" : car_list[id]["distance"],
-                                 "link" : car_list[id]["link"],
-                                 "type" : "old" if id in existing_ids else "new"}})
+            for id in car_list.keys():
+                new_dict.update({id:{"distance" : car_list[id]["distance"],
+                                     "link"     : car_list[id]["link"],
+                                     "type"     : "old" if id in existing_ids else "new"}})
 
         try:
             driver.quit()
@@ -184,65 +221,100 @@ if os.path.exists(f"{HOME}/script_stat/autotrader/prev_data.json"):
 else:
     prev_data_dict= {}
 
-
+print("searching Audi")
 new_dict_audi = get_car_dict("Audi",prev_data_dict)
-
+print("searching Benz")
 new_dict_benz = get_car_dict("Mercedes-Benz",prev_data_dict)
+print("finished searching Benz")
 
-
-driver = open_driver()
-driver.get("https://www.autotrader.co.uk")
-accept_cookies(driver)
-time.sleep(5)
-
-msg_audi = ""
-msg_benz = ""
-msg = ""
-audi_found = False
-logging.info("finding new Audi cars")
-for key in new_dict_audi.keys():
-    if new_dict_audi[key]["type"] == "new":
-        driver.get(new_dict_audi[key]['link'])
-        time.sleep(5)
-        element = WebDriverWait(driver, 30).until(
-                    EC.presence_of_element_located((By.XPATH, ".//h2[@data-gui='advert-price']"))
-                  )
-        price = re.sub(r'.*?(\d+)',r'\1',element.text)
-        price = int(price)
-        if price <= 20000:
-            logging.info(f'Adding {key} to list with price {price}')
-            audi_found = True
-            msg_audi += f"<a href='{new_dict_audi[key]['link']}'><u>{key}</u></a> distance {new_dict_audi[key]['distance']} price {price}<br>"
-
-if msg_audi:
-   msg += "<html> <body> <h2><b><u> Audi </u></b></h2><br>" + msg_audi
-
-logging.info("finding new Benz cars")
-benz_found = False 
-for key in new_dict_benz.keys():
-    if new_dict_benz[key]["type"] == "new":
-        driver.get(new_dict_benz[key]['link'])
-        time.sleep(5)
-        
-        element = WebDriverWait(driver, 30).until(
-                    EC.presence_of_element_located((By.XPATH, ".//h2[@data-gui='advert-price']"))
-                  )
-        price = re.sub(r'.*?(\d+)',r'\1',element.text)
-        price = int(price)
-        if price <= 20000:
-            logging.info(f'Adding {key} to list with price {price}')
-            benz_found = True
-            msg_benz += f"<a href='{new_dict_benz[key]['link']}'><u>{key}</u></a> distance {new_dict_benz[key]['distance']} price {price}<br>"
-
-if msg_benz:
-    msg += "<br><h2><b><u> Mercedes </u></b></h2><br><br>" + msg_benz
-
-if audi_found or benz_found:
-    send_email("adiga23@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
-    #send_email("archanag4ever@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+if selenium.__version__ == "3.14.0":
+    
+    msg_audi = ""
+    msg_benz = ""
+    msg = ""
+    audi_found = False
+    for key in new_dict_audi.keys():
+        if new_dict_audi[key]["type"] == "new":
+            price = new_dict_audi[key]["price"]
+            if price <= 20000:
+                logging.info(f'Adding {key} to list with price {price}')
+                audi_found = True
+                msg_audi += f"<a href='{new_dict_audi[key]['link']}'><u>{key}</u></a> <b><u>distance</u></b> {new_dict_audi[key]['distance']} <b><u>price</u></b> {price} <b><u>miles</u></b> {new_dict_audi[key]['car_miles']} <b><u>reg</u></b> {new_dict_audi[key]['car_reg']} <br>"
+    
+    if msg_audi:
+       msg += "<html> <body> <h2><b><u> Audi </u></b></h2><br>" + msg_audi
+    
+    benz_found = False 
+    for key in new_dict_benz.keys():
+        if new_dict_benz[key]["type"] == "new":
+            price = new_dict_benz[key]['price']
+            if price <= 20000:
+                logging.info(f'Adding {key} to list with price {price}')
+                benz_found = True
+                msg_benz += f"<a href='{new_dict_benz[key]['link']}'><u>{key}</u></a> <b><u>distance</u></b> {new_dict_benz[key]['distance']} <b><u>price</u><b> {price} <b><u>miles</u></b> {new_dict_benz[key]['car_miles']} <b><u>reg</u></b> {new_dict_benz[key]['car_reg']}<br>"
+    
+    if msg_benz:
+        msg += "<br><h2><b><u> Mercedes </u></b></h2><br><br>" + msg_benz
+    
+    if audi_found or benz_found:
+        send_email("adiga23@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+        #send_email("archanag4ever@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+    else:
+        logging.info("No new cars")
 else:
-    logging.info("No new cars")
-
+    driver = open_driver()
+    driver.get("https://www.autotrader.co.uk")
+    accept_cookies(driver)
+    time.sleep(5)
+    
+    msg_audi = ""
+    msg_benz = ""
+    msg = ""
+    audi_found = False
+    logging.info("finding new Audi cars")
+    for key in new_dict_audi.keys():
+        if new_dict_audi[key]["type"] == "new":
+            driver.get(new_dict_audi[key]['link'])
+            time.sleep(5)
+            element = WebDriverWait(driver, 30).until(
+                        EC.presence_of_element_located((By.XPATH, ".//h2[@data-gui='advert-price']"))
+                      )
+            price = re.sub(r'.*?(\d+)',r'\1',element.text)
+            price = int(price)
+            if price <= 20000:
+                logging.info(f'Adding {key} to list with price {price}')
+                audi_found = True
+                msg_audi += f"<a href='{new_dict_audi[key]['link']}'><u>{key}</u></a> distance {new_dict_audi[key]['distance']} price {price}<br>"
+    
+    if msg_audi:
+       msg += "<html> <body> <h2><b><u> Audi </u></b></h2><br>" + msg_audi
+    
+    logging.info("finding new Benz cars")
+    benz_found = False 
+    for key in new_dict_benz.keys():
+        if new_dict_benz[key]["type"] == "new":
+            driver.get(new_dict_benz[key]['link'])
+            time.sleep(5)
+            
+            element = WebDriverWait(driver, 30).until(
+                        EC.presence_of_element_located((By.XPATH, ".//h2[@data-gui='advert-price']"))
+                      )
+            price = re.sub(r'.*?(\d+)',r'\1',element.text)
+            price = int(price)
+            if price <= 20000:
+                logging.info(f'Adding {key} to list with price {price}')
+                benz_found = True
+                msg_benz += f"<a href='{new_dict_benz[key]['link']}'><u>{key}</u></a> distance {new_dict_benz[key]['distance']} price {price}<br>"
+    
+    if msg_benz:
+        msg += "<br><h2><b><u> Mercedes </u></b></h2><br><br>" + msg_benz
+    
+    if audi_found or benz_found:
+        send_email("adiga23@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+        #send_email("archanag4ever@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+    else:
+        logging.info("No new cars")
+    
 new_dict = new_dict_audi.copy()
 new_dict.update(new_dict_benz)
 
