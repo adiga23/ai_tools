@@ -45,14 +45,14 @@ https://historicdata.betfair.com/#/apidocs
 logging.basicConfig(level=logging.INFO,filemode="w",filename=f"{HOME}/script_stat/get_historic_data/status.log")  # change to DEBUG to see log all updates
 
 # create trading instance
-trading = betfairlightweight.APIClient("adiga23@gmail.com", "Aar@07122014", app_key="gTjbUG3i87ZDyCw8",certs=f'{HOME}/betfair_keys')
+trading = betfairlightweight.APIClient("adiga23@gmail.com", "Aar@07122014", app_key="gTjbUG3i87ZDyCw8",certs=f'{HOME}/login_tokens/betfair')
 
 # login
 trading.login()
 
-curr_date = datetime(2015,4,1)
+curr_date = datetime(2022,2,1)
 day = timedelta(days=1)
-end_date = datetime(2015,5,30)
+end_date = datetime(2022,2,6)
 
 # get file list
 try:
@@ -89,12 +89,11 @@ try:
 
         curr_date += day
 except:
-    pass
+    curr_date -= day
 
 try:
     trading.logout()
 except:
     pass
 
-curr_date -= day
 send_email("adiga23@gmail.com",f"Database Download interrupted {datetime.now().strftime('%d/%m/%Y')}",f"Downloaded till {curr_date.strftime('%d/%m/%Y')}")
