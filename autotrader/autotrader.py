@@ -210,6 +210,8 @@ def get_car_dict(car_type,current_dict):
 
 HOME = os.getenv('HOME')
 logging.basicConfig(filename=f'{HOME}/script_stat/autotrader/status.log',filemode="w",level=logging.INFO)
+with open(f"{HOME}/pass_info.json","r") as f:
+    pass_info = json.load(f)
 
 lock = FileLock(f"{HOME}/serialise")
 lock.acquire()
@@ -257,8 +259,8 @@ if selenium.__version__ == "3.14.0":
         msg += "<br><h2><b><u> Mercedes </u></b></h2><br><br>" + msg_benz
     
     if audi_found or benz_found:
-        send_email("adiga23@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
-        #send_email("archanag4ever@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+        send_email(pass_info["mygmail"]["username"],f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+        #send_email(pass_info["wifegmail"]["username"],f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
     else:
         logging.info("No new cars")
 else:
@@ -310,8 +312,8 @@ else:
         msg += "<br><h2><b><u> Mercedes </u></b></h2><br><br>" + msg_benz
     
     if audi_found or benz_found:
-        send_email("adiga23@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
-        #send_email("archanag4ever@gmail.com",f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+        send_email(pass_info["mygmail"]["username"],f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
+        #send_email(pass_info["wifegmail"]["username"],f"Car search {datetime.now().strftime('%d/%m/%Y')}",msg)
     else:
         logging.info("No new cars")
     

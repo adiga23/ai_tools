@@ -116,9 +116,13 @@ firefox_option.add_argument("--incognito")
 driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
                            service_log_path=os.devnull)
 
+HOME = os.getenv("HOME")
+with open(f"{HOME}/pass_info.json","r") as f :
+    pass_info = json.load(f)
+
 print("Logging into GMAIL .....")
 gmail_login(driver)
-to = "adiga23@gmail.com"
+to = pass_info["mygmail"]["username"]
 subject = f"Python {datetime.datetime.now()}"
 message = "Sending email from python script"
 print("Sending message ......")

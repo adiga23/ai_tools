@@ -15,7 +15,7 @@ https://historicdata.betfair.com/#/apidocs
 logging.basicConfig(level=logging.INFO)  # change to DEBUG to see log all updates
 
 # create trading instance
-trading = betfairlightweight.APIClient("adiga23@gmail.com", "Aar@07122014", app_key="gTjbUG3i87ZDyCw8",certs=f'{HOME}/betfair_keys')
+trading = betfairlightweight.APIClient(<username>, <password>, app_key=<app_key>,certs=f'{HOME}/betfair_keys')
 
 # login
 trading.login()

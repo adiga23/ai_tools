@@ -30,7 +30,7 @@ while curr_date <= end_date:
     while not os.path.exists(f"{HOME}/database/tennis/{next_date.strftime('%d_%m_%Y')}"):
         print(f"Waiting for {next_date.strftime('%d_%m_%Y')}")
         logging.info(f"Waiting for {next_date.strftime('%d_%m_%Y')}")
-        time.sleep(5)
+        time.sleep(300)
     database_dir = f"{HOME}/database/tennis/{curr_date.strftime('%d_%m_%Y')}"
     os.chdir(database_dir)
     print(f"processing {curr_date.strftime('%d_%m_%Y')}")
@@ -68,6 +68,14 @@ while curr_date <= end_date:
                     if "marketType" not in data["marketDefinition"].keys():
                         continue
                     if (data["marketDefinition"]["marketType"] != "MATCH_ODDS"):
+                        continue
+                    if ("bettingType" not in data["marketDefinition"].keys() ):
+                        continue
+                    if ("status" not in data["marketDefinition"].keys()) :
+                        continue
+                    if ("runners" not in data["marketDefinition"].keys()) :
+                        continue
+                    if (len(data["marketDefinition"]["runners"]) != 2):
                         continue
                     id = data["marketDefinition"]["eventId"]
                     odds_id = data["id"]
@@ -168,7 +176,7 @@ while curr_date <= end_date:
                 (curr_date.month != prev_date.month)
     if json_dump:
         json_dict = {"games_list" : game_odds_list}
-        print(f"writing {prev_date.month}_{prev_date.year}.json")
+        print(f"writing {prev_date.month}_{prev_date.year}.json with {len(game_odds_list)} entries")
         logging.info(f"writing {prev_date.month}_{prev_date.year}.json")
         
         with open(f"{games_info_dir}/{prev_date.month}_{prev_date.year}.json","w") as f:
