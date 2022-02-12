@@ -4,8 +4,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import json
 from datetime import datetime
+import logging
+
 
 HOME = os.getenv("HOME")
+logging.basicConfig(level=logging.INFO,filemode="w",filename=f"{HOME}/script_stat/my_ip/status.log")  # change to DEBUG to see log all updates
 
 ip_file = f"{HOME}/script_stat/my_ip/current_ip"
 
@@ -46,12 +49,12 @@ except:
 current_ip=os.popen("curl ifconfig.me").read()
 
 if current_ip != prev_ip:
-    print(current_ip)
     with open(ip_file,"w") as f:
         f.write(current_ip) 
 
     send_email(pass_info["mygmail"]["username"],f"My current IP {datetime.now().strftime('%d/%m/%Y:%H:%M')}",f"My current ip is : {current_ip}")
+    logging.info(f"{datetime.now().strftime('%d/%m/%Y:%H:%M')} : Triggered my_ip")
     
 else:
-    print("ip is the same")
+    logging.info(f"{datetime.now().strftime('%d/%m/%Y:%H:%M')} : IP was same")
 
