@@ -12,10 +12,10 @@ logging.basicConfig(level=logging.INFO,filemode="w",filename=f"{HOME}/script_sta
 
 
 curr_date = datetime(2015,4,1)
-#curr_date = datetime(2015,6,22)
+# curr_date = datetime(2019,2,8)
 day = timedelta(days=1)
 end_date = datetime(2022,2,5)
-#end_date = datetime(2015,6,22)
+# end_date = datetime(2019,2,8)
 
 
 id_info_dict = {}
@@ -38,6 +38,7 @@ while curr_date <= end_date:
 
     num_files = len(os.listdir(database_dir))
 
+    
     for i in range(0,num_files):
         f = bz2.BZ2File(f"{database_dir}/file_{i}.bz2","r")
         # if curr_date == datetime(2015,6,6):
@@ -47,7 +48,10 @@ while curr_date <= end_date:
         except:
             continue
         for line in file_lines:
-            line_dict = json.loads(line)
+            try:
+                line_dict = json.loads(line)
+            except:
+                continue
             if "mc" not in line_dict.keys():
                 continue
             for data in line_dict["mc"]:
