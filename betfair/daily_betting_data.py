@@ -14,6 +14,7 @@ from selenium.webdriver.firefox.service import Service
 import re
 import time
 import threading
+from filelock import FileLock
 
 def element_click(driver,id):
     element = WebDriverWait(driver, 30).until(
@@ -55,29 +56,45 @@ def get_latest_odds():
     trading = betfairlightweight.APIClient(pass_info["betfair"]["username"], pass_info["betfair"]["password"] , app_key=pass_info["betfair"]["app_key"],certs=f'{HOME}/login_tokens/betfair')
 
     # login
+    caught_trap = False
     try:
         trading.login()
-
         # Grab all event type ids. This will return a list which we will iterate over to print out the id and the name of the sport
         ## Market filter for event type does not work well
         #tennis_market_filter = betfairlightweight.filters.market_filter(text_query="Tennis")
         #event_types = trading.betting.list_event_types(filter=tennis_market_filter)
         event_types = trading.betting.list_event_types()
+    except:
+        caught_trap = True
+
+    if not caught_trap:
         for event in event_types:
             if event.event_type.name == "Tennis":
                 tennis_id = event.event_type.id
-        tennis_event_filter = betfairlightweight.filters.market_filter(event_type_ids=[tennis_id],in_play_only=True)
-        onging_tennis_events = trading.betting.list_events(filter=tennis_event_filter)
+
+    if not caught_trap:
+        try:
+            tennis_event_filter = betfairlightweight.filters.market_filter(event_type_ids=[tennis_id],in_play_only=True)
+            onging_tennis_events = trading.betting.list_events(filter=tennis_event_filter)
+        except:
+            caught_trap = True
+
+    if not caught_trap:
         market_id_list = []
         for tennis_event in onging_tennis_events:
             p1 = re.sub(r"(.*?) v .*",r"\1",tennis_event.event.name)
             p2 = re.sub(r".*? v (.*)",r"\1",tennis_event.event.name)
             id = tennis_event.event.id
             market_catalogue_filter = betfairlightweight.filters.market_filter(event_ids=[id])
-            market_catalogues = trading.betting.list_market_catalogue(
-                                    filter=market_catalogue_filter,
-                                    max_results='1000'
-                                )
+            try:
+                market_catalogues = trading.betting.list_market_catalogue(
+                                        filter=market_catalogue_filter,
+                                        max_results='1000'
+                                    )
+            except:
+                caught_trap = True
+                break
+
             
             for market in market_catalogues:
                 market_id = market.market_id
@@ -85,10 +102,11 @@ def get_latest_odds():
                 if market_name in ["Match Odds","Set 1 Winner","Set 2 Winner","Set 3 Winner","Set 4 Winner","Set 5 Winner"]:
                     market_id_list.append(market_id)
                     latest_odds_info_dict.update({market_id:{"players" : [p1,p2],
-                                                             "market_name" : market_name}})
+                                                            "market_name" : market_name}})
 
+    if not caught_trap:
         market_id_list += live_market_ids
-        
+    
         while len(market_id_list) > 0:
             if len(market_id_list) > 25:
                 current_market_id_list = market_id_list[0:25]
@@ -100,8 +118,12 @@ def get_latest_odds():
             price_filter = betfairlightweight.filters.price_projection(
                                     price_data=['EX_BEST_OFFERS']
                                 )
-            market_book = trading.betting.list_market_book(market_ids=current_market_id_list,
-                                                        price_projection=price_filter)
+            try:
+                market_book = trading.betting.list_market_book(market_ids=current_market_id_list,
+                                                            price_projection=price_filter)
+            except:
+                caught_trap = True
+                break
 
             for market in market_book:
                 status = market.status
@@ -128,18 +150,17 @@ def get_latest_odds():
                     runner_list.append(runner_dict.copy())
                 latest_odds_info_dict[market_id].update({"status"  : status,
                                                         "runners" : runner_list})
-
-    except Exception as e:
-        pprint(e)
-        latest_odds_info_dict = {}
-        pass
+        
 
     try:
         trading.logout()
     except:
         pass
 
-    latest_odds = latest_odds_info_dict.copy()
+    if not caught_trap:
+        latest_odds = latest_odds_info_dict.copy()
+    else:
+        latest_odds = {}
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live odds")
 
 def get_live_scores():
@@ -149,6 +170,11 @@ def get_live_scores():
     for game in game_set_info.keys():
         game_set_info[game]["sample"] = False
     HOME = os.getenv("HOME")
+    lock = FileLock(f"{HOME}/serialise")
+    lock.acquire()
+
+    print(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+    
     firefox_path = f"{HOME}/webdriver/geckodriver"
     firefox_option = Options()
     firefox_option.add_argument("--headless")
@@ -263,6 +289,8 @@ def get_live_scores():
     except:
         pass
 
+    lock.release()
+    print(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live scores")
 
 def get_current_set_odd_sample():
@@ -311,7 +339,7 @@ def prepare_daily_data():
                 final_stat1 = [1,0]
             
         else:
-            live_market_ids.append(market_id)
+            
             final_stat = [0,0]
             final_stat1 = [0,0]
         
@@ -331,6 +359,7 @@ def prepare_daily_data():
             if not found_update:
                 print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} update found on {player_key}")
             found_update = True
+
         if key_in_game_set:
             current_score = game_set_info[player_key]["current_score"]
             current_score1 = [game_set_info[player_key]["current_score"][1],game_set_info[player_key]["current_score"][0]]
@@ -344,16 +373,18 @@ def prepare_daily_data():
 
         if update_needed:
             if not(key1_in_data or key_in_data):
-                daily_tennis_data.update({player_key : {market_id : {"market_name"    : market_name,
-                                                                     "score_odd_list" : [{"current_score" : current_score,"odds" : odds}]}}})
-                daily_tennis_data[player_key][market_id].update({"final_stat" : final_stat})
+                if status != "CLOSED":
+                    daily_tennis_data.update({player_key : {market_id : {"market_name"    : market_name,
+                                                                        "score_odd_list" : [{"current_score" : current_score,"odds" : odds}]}}})
+                    daily_tennis_data[player_key][market_id].update({"final_stat" : final_stat})
+                    live_market_ids.append(market_id)
             elif key_in_data:
                 if status != "CLOSED":
                     if market_id in daily_tennis_data[player_key].keys():
                         daily_tennis_data[player_key][market_id]["score_odd_list"].append({"current_score" : current_score,"odds" : odds})
                     else:
                         daily_tennis_data[player_key].update({market_id : {"market_name"    : market_name,
-                                                                        "score_odd_list" : [{"current_score" :current_score,"odds" : odds}]}})
+                                                                            "score_odd_list" : [{"current_score" :current_score,"odds" : odds}]}})
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                 daily_tennis_data[player_key][market_id]["final_stat"] = final_stat
@@ -367,6 +398,14 @@ def prepare_daily_data():
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                 daily_tennis_data[player_key1][market_id]["final_stat"] = final_stat1
+
+    for market_id in live_market_ids:
+        market_id_found = False
+        for game in daily_tennis_data.keys():
+            if market_id in daily_tennis_data[game].keys():
+                market_id_found = True
+        if not market_id_found:
+            print(f"{market_id} is in live but not the daily data")
 
     if found_update:
         print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} found something to update")        
