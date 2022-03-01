@@ -403,31 +403,31 @@ def prepare_daily_data():
             if not(key1_in_data or key_in_data):
                 if status != "CLOSED":
                     daily_tennis_data.update({player_key : {market_id : {"market_name"    : market_name,
-                                                                        "score_odd_list" : [{"current_score" : current_score,"odds" : odds}]}}})
-                    daily_tennis_data[player_key][market_id].update({"final_stat" : final_stat})
+                                                                        "score_odd_list" : [{"current_score" : current_score.copy(),"odds" : odds.copy()}]}}})
+                    daily_tennis_data[player_key][market_id].update({"final_stat" : final_stat.copy()})
                     live_market_ids.append(market_id)
             elif key_in_data:
                 if status != "CLOSED":
                     if market_id in daily_tennis_data[player_key].keys():
-                        daily_tennis_data[player_key][market_id]["score_odd_list"].append({"current_score" : current_score,"odds" : odds})
+                        daily_tennis_data[player_key][market_id]["score_odd_list"].append({"current_score" : current_score.copy(),"odds" : odds.copy()})
                     else:
                         daily_tennis_data[player_key].update({market_id : {"market_name"    : market_name,
-                                                                            "score_odd_list" : [{"current_score" :current_score,"odds" : odds}]}})
+                                                                            "score_odd_list" : [{"current_score" :current_score.copy(),"odds" : odds.copy()}]}})
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                     logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
-                daily_tennis_data[player_key][market_id]["final_stat"] = final_stat
+                daily_tennis_data[player_key][market_id]["final_stat"] = final_stat.copy()
             elif key1_in_data:
                 if status != "CLOSED":
                     if market_id in daily_tennis_data[player_key1].keys():
-                        daily_tennis_data[player_key1][market_id]["score_odd_list"].append({"current_score" : current_score1,"odds" : odds1})
+                        daily_tennis_data[player_key1][market_id]["score_odd_list"].append({"current_score" : current_score1.copy(),"odds" : odds1.copy()})
                     else:
                         daily_tennis_data[player_key1].update({market_id : {"market_name"    : market_name,
-                                                                            "score_odd_list" : [{"current_score" : current_score1,"odds" : odds1}]}})
+                                                                            "score_odd_list" : [{"current_score" : current_score1.copy(),"odds" : odds1.copy()}]}})
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                     logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
-                daily_tennis_data[player_key1][market_id]["final_stat"] = final_stat1
+                daily_tennis_data[player_key1][market_id]["final_stat"] = final_stat1.copy()
 
     for market_id in live_market_ids:
         market_id_found = False
