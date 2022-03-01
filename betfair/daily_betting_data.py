@@ -47,6 +47,8 @@ def get_latest_odds():
     global live_market_ids
     global latest_odds
     print(f"{datetime.now().strftime('%H:%M:%S')} : Started live odds")
+    logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Started live odds")
+    
 
     latest_odds_info_dict = {}
     HOME = os.getenv("HOME")
@@ -162,10 +164,13 @@ def get_latest_odds():
     else:
         latest_odds = {}
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live odds")
+    logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Completed live odds")
 
 def get_live_scores():
     global game_set_info
     print(f"{datetime.now().strftime('%H:%M:%S')} : Started live scores")
+    logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Started live scores")
+
 
     for game in game_set_info.keys():
         game_set_info[game]["sample"] = False
@@ -174,6 +179,8 @@ def get_live_scores():
     lock.acquire()
 
     print(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+    logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+
     
     firefox_path = f"{HOME}/webdriver/geckodriver"
     firefox_option = Options()
@@ -224,6 +231,7 @@ def get_live_scores():
     game_keys = []
     while True:
         print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} searching game {count}")
+        logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} searching game {count}")
         found_new_game = False
         if selenium.__version__ == "3.14.0":
             game_list = driver.find_elements_by_xpath(".//a[@class='mod-link']")
@@ -291,7 +299,9 @@ def get_live_scores():
 
     lock.release()
     print(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+    logging.info(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live scores")
+    logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Completed live scores")
 
 def get_current_set_odd_sample():
     global game_set_info
@@ -329,8 +339,10 @@ def prepare_daily_data():
             try:
                 live_market_ids.remove(market_id)
                 print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : removing {market_id} from the live list")
+                logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : removing {market_id} from the live list")
             except:
                 print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} could not find {market_id} in live_market_ids")
+                logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} could not find {market_id} in live_market_ids")
             if market["runners"][0]["status"] == "WINNER":
                 final_stat = [1,0]
                 final_stat1 = [0,1]
@@ -358,6 +370,7 @@ def prepare_daily_data():
 
             if not found_update:
                 print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} update found on {player_key}")
+                logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} update found on {player_key}")
             found_update = True
 
         if key_in_game_set:
@@ -387,6 +400,7 @@ def prepare_daily_data():
                                                                             "score_odd_list" : [{"current_score" :current_score,"odds" : odds}]}})
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
+                    logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                 daily_tennis_data[player_key][market_id]["final_stat"] = final_stat
             elif key1_in_data:
                 if status != "CLOSED":
@@ -397,6 +411,7 @@ def prepare_daily_data():
                                                                             "score_odd_list" : [{"current_score" : current_score1,"odds" : odds1}]}})
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
+                    logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                 daily_tennis_data[player_key1][market_id]["final_stat"] = final_stat1
 
     for market_id in live_market_ids:
@@ -406,9 +421,18 @@ def prepare_daily_data():
                 market_id_found = True
         if not market_id_found:
             print(f"{market_id} is in live but not the daily data")
+            logging.info(f"{market_id} is in live but not the daily data")
+
+    for game in daily_tennis_data.keys():
+        for market_id in daily_tennis_data[game].keys():
+            if daily_tennis_data[game][market_id]["final_stat"] != [0,0]:
+                if market_id not in live_market_ids:
+                    print(f"{market_id} is in daily_tennis_data but not in live")
+                    logging.info(f"{market_id} is in daily_tennis_data but not in live")
 
     if found_update:
         print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} found something to update")        
+        logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} found something to update")        
 
 def store_data(file):
     global daily_tennis_data
@@ -417,6 +441,7 @@ def store_data(file):
     todays_data = {}
     removal_list = []
     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} Preparing data for the previous day")
+    logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} Preparing data for the previous day")
     for game in daily_tennis_data.keys():
         all_markets_complete = True
         for market_id in daily_tennis_data[game].keys():
@@ -424,13 +449,13 @@ def store_data(file):
                             (daily_tennis_data[game][market_id]["final_stat"][1] !=0)
             if market_id not in live_market_ids:
                 if not stat_non_zero:
-                    print(f"{market_id} not in live but did not complete")
+                    logging.info(f"{market_id} not in live but did not complete")
                     with open("temp.json","w") as f :
                         json.dump(daily_tennis_data,f)
                         exit()
             else:
                 if stat_non_zero:
-                    print(f"{market_id} in live but completed")
+                    logging.info(f"{market_id} in live but completed")
                     with open("temp.json","w") as f :
                         json.dump(daily_tennis_data,f)
                 all_markets_complete = False
@@ -462,13 +487,13 @@ while True:
         file_lines = f.readlines()
 
     if int(file_lines[0]) == 1:
-        print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} shutdown of the script")
+        logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} shutdown of the script")
         with open(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_data.json","w") as f:
             json.dump(daily_tennis_data,f)
             break
 
     if current_day.day != datetime.now().day:
-        print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} dumping the current full snapshot")
+        logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} dumping the current full snapshot")
         with open(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_full_snap_shot.json","w") as f:
             json.dump(daily_tennis_data,f)
         store_data(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_data.json")
