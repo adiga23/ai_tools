@@ -515,11 +515,11 @@ while True:
             json.dump(daily_tennis_data,f)
             break
 
-    if current_day.day != datetime.now().day:
+    if current_day.hour != datetime.now().hour:
         logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} dumping the current full snapshot")
-        with open(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_full_snap_shot.json","w") as f:
+        with open(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y_%H')}_full_snap_shot.json","w") as f:
             json.dump(daily_tennis_data,f)
-        store_data(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_data.json")
+        store_data(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y_%H')}_data.json")
         current_day = datetime.now()
     time.sleep(10)
     # count +=1 
