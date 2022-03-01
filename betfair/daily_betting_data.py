@@ -46,6 +46,9 @@ logging.basicConfig(level=logging.INFO,filemode="w",filename=f"{HOME}/script_sta
 def get_latest_odds():
     global live_market_ids
     global latest_odds
+    global get_odds_error
+
+    get_odds_error = False
     print(f"{datetime.now().strftime('%H:%M:%S')} : Started live odds")
     logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Started live odds")
     
@@ -162,18 +165,23 @@ def get_latest_odds():
     if not caught_trap:
         latest_odds = latest_odds_info_dict.copy()
     else:
-        latest_odds = {}
+        get_odds_error = True
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live odds")
     logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Completed live odds")
 
 def get_live_scores():
     global game_set_info
+    global get_set_error
+    get_set_error = False
     print(f"{datetime.now().strftime('%H:%M:%S')} : Started live scores")
     logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Started live scores")
 
 
+    game_set_info_snapshot = game_set_info.copy()
     for game in game_set_info.keys():
         game_set_info[game]["sample"] = False
+
+
     HOME = os.getenv("HOME")
     lock = FileLock(f"{HOME}/serialise")
     lock.acquire()
@@ -199,98 +207,104 @@ def get_live_scores():
     else:
         driver = webdriver.Firefox(options=firefox_option,service=s)
 
-    driver.get("https://www.betfair.com/exchange/plus/inplay/tennis")
-    element_clickable(driver,'.//ours-button/a[text()="Tennis"]')
+    try:
+        driver.get("https://www.betfair.com/exchange/plus/inplay/tennis")
+        element_clickable(driver,'.//ours-button/a[text()="Tennis"]')
 
-    games_loaded = False
-    while True:
-        if selenium.__version__ == "3.14.0":
-            game_list = driver.find_elements_by_xpath(".//a[@class='mod-link']")
-        else:
-            game_list = driver.find_elements(By.XPATH,".//a[@class='mod-link']")
-        for game in game_list:
+        games_loaded = False
+        while True:
             if selenium.__version__ == "3.14.0":
-                try:
-                    set_home = game.find_element_by_xpath(".//span[@class='home']")
-                    games_loaded = True
-                except:
-                    continue
+                game_list = driver.find_elements_by_xpath(".//a[@class='mod-link']")
             else:
-                try:
-                    set_home = game.find_element(By.XPATH,".//span[@class='home']")
-                    games_loaded = True
-                except:
-                    continue
+                game_list = driver.find_elements(By.XPATH,".//a[@class='mod-link']")
+            for game in game_list:
+                if selenium.__version__ == "3.14.0":
+                    try:
+                        set_home = game.find_element_by_xpath(".//span[@class='home']")
+                        games_loaded = True
+                    except:
+                        continue
+                else:
+                    try:
+                        set_home = game.find_element(By.XPATH,".//span[@class='home']")
+                        games_loaded = True
+                    except:
+                        continue
 
-        if len(game_list) == 0 or not games_loaded:
-            time.sleep(1) 
-        else:
-            break      
+            if len(game_list) == 0 or not games_loaded:
+                time.sleep(1) 
+            else:
+                break      
 
-    count = 0
-    game_keys = []
-    while True:
-        print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} searching game {count}")
-        logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} searching game {count}")
-        found_new_game = False
-        if selenium.__version__ == "3.14.0":
-            game_list = driver.find_elements_by_xpath(".//a[@class='mod-link']")
-        else:
-            game_list = driver.find_elements(By.XPATH,".//a[@class='mod-link']")
-
-        for game in game_list:
-            view_element(driver,game)
+        count = 0
+        game_keys = []
+        while True:
+            print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} searching game {count}")
+            logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} searching game {count}")
+            found_new_game = False
             if selenium.__version__ == "3.14.0":
-                try:
-                    set_home = int(game.find_element_by_xpath(".//span[@class='home']").text)
-                except:
-                    continue
-                set_away = int(game.find_element_by_xpath(".//span[@class='away']").text)
-                try:
-                    current_score_home = int(game.find_element_by_xpath(".//div[@class='home']").text)
-                    current_score_away = int(game.find_element_by_xpath(".//div[@class='away']").text)
-                except:
-                    current_score_home = 0
-                    current_score_away = 0
-                runner_list = game.find_elements_by_xpath(".//ul[@class='runners']/li")
-                home_runner = runner_list[0].text
-                away_runner = runner_list[1].text
+                game_list = driver.find_elements_by_xpath(".//a[@class='mod-link']")
             else:
-                try:
-                    set_home = int(game.find_element(By.XPATH,".//span[@class='home']").text)
-                except:
-                    continue
-                set_away = int(game.find_element(By.XPATH,".//span[@class='away']").text)
-                try:
-                    current_score_home = int(game.find_element(By.XPATH,".//div[@class='home']").text)
-                    current_score_away = int(game.find_element(By.XPATH,".//div[@class='away']").text)
-                except:
-                    current_score_home = 0
-                    current_score_away = 0
-                runner_list = game.find_elements(By.XPATH,".//ul[@class='runners']/li")
-                home_runner = runner_list[0].text
-                away_runner = runner_list[1].text
+                game_list = driver.find_elements(By.XPATH,".//a[@class='mod-link']")
 
-            game_set_key = f"{home_runner} v {away_runner}"
-            if game_set_key not in game_keys:
-                found_new_game = True
-                game_keys.append(game_set_key)
+            for game in game_list:
+                view_element(driver,game)
+                if selenium.__version__ == "3.14.0":
+                    try:
+                        set_home = int(game.find_element_by_xpath(".//span[@class='home']").text)
+                    except:
+                        continue
+                    set_away = int(game.find_element_by_xpath(".//span[@class='away']").text)
+                    try:
+                        current_score_home = int(game.find_element_by_xpath(".//div[@class='home']").text)
+                        current_score_away = int(game.find_element_by_xpath(".//div[@class='away']").text)
+                    except:
+                        current_score_home = 0
+                        current_score_away = 0
+                    runner_list = game.find_elements_by_xpath(".//ul[@class='runners']/li")
+                    home_runner = runner_list[0].text
+                    away_runner = runner_list[1].text
+                else:
+                    try:
+                        set_home = int(game.find_element(By.XPATH,".//span[@class='home']").text)
+                    except:
+                        continue
+                    set_away = int(game.find_element(By.XPATH,".//span[@class='away']").text)
+                    try:
+                        current_score_home = int(game.find_element(By.XPATH,".//div[@class='home']").text)
+                        current_score_away = int(game.find_element(By.XPATH,".//div[@class='away']").text)
+                    except:
+                        current_score_home = 0
+                        current_score_away = 0
+                    runner_list = game.find_elements(By.XPATH,".//ul[@class='runners']/li")
+                    home_runner = runner_list[0].text
+                    away_runner = runner_list[1].text
 
-            if game_set_key in game_set_info.keys():
-                current_score = [[set_home,current_score_home],[set_away,current_score_away]]
-                if current_score != game_set_info[game_set_key]["current_score"]:
-                    game_set_info[game_set_key]["current_score"] = current_score
-                    game_set_info[game_set_key]["sample"] = True
-            else:
-                game_set_info.update({game_set_key : {"current_score" : [[set_home,current_score_home],[set_away,current_score_away]],
-                                                      "sample"        : True}})
+                game_set_key = f"{home_runner} v {away_runner}"
+                if game_set_key not in game_keys:
+                    found_new_game = True
+                    game_keys.append(game_set_key)
 
-        if not found_new_game:
-            break
-        
-        if count >= 100:
-            break
-        count += 1
+                if game_set_key in game_set_info.keys():
+                    current_score = [[set_home,current_score_home],[set_away,current_score_away]]
+                    if current_score != game_set_info[game_set_key]["current_score"]:
+                        game_set_info[game_set_key]["current_score"] = current_score
+                        game_set_info[game_set_key]["sample"] = True
+                else:
+                    game_set_info.update({game_set_key : {"current_score" : [[set_home,current_score_home],[set_away,current_score_away]],
+                                                        "sample"        : True}})
+
+            if not found_new_game:
+                break
+            
+            if count >= 100:
+                break
+            count += 1
+    except Exception as e:
+        pprint(e)
+        get_set_error = True
+        game_set_info = game_set_info_snapshot
+
 
     try:
         driver.quit()
@@ -307,6 +321,7 @@ def get_current_set_odd_sample():
     global game_set_info
     global live_market_ids
     global latest_odds
+
     t=threading.Thread(target=get_live_scores)
     t.start()
 
@@ -473,6 +488,8 @@ game_set_info = {}
 live_market_ids = []
 latest_odds = {}
 daily_tennis_data = {}
+get_set_error = False
+get_odds_error = False
 
 current_day = datetime.now()
 
@@ -481,8 +498,14 @@ while True:
     
     get_current_set_odd_sample()
 
-    prepare_daily_data()
+    if not(get_set_error or get_odds_error):
+        prepare_daily_data()
+    else:
+        print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} Got error set : {get_set_error} odds : {get_odds_error}")
+
     
+    get_set_error = False
+    get_odds_error = False
     with open(f"{HOME}/script_stat/daily_tennis_data/shutdown","r") as f:
         file_lines = f.readlines()
 
