@@ -406,44 +406,31 @@ def prepare_daily_data():
                                                                         "score_odd_list" : [{"current_score" : current_score.copy(),"odds" : odds.copy()}]}}})
                     daily_tennis_data[player_key][market_id].update({"final_stat" : final_stat.copy()})
                     live_market_ids.append(market_id)
-                    print(f"Adding new {market_id} to list")
-                    logging.info(f"Adding new {market_id} to list")
             elif key_in_data:
                 if status != "CLOSED":
-                    print(f"Updating {market_id} to list")
-                    logging.info(f"Updating {market_id} to list")
                     if market_id in daily_tennis_data[player_key].keys():
                         daily_tennis_data[player_key][market_id]["score_odd_list"].append({"current_score" : current_score.copy(),"odds" : odds.copy()})
                     else:
                         daily_tennis_data[player_key].update({market_id : {"market_name"    : market_name,
                                                                             "score_odd_list" : [{"current_score" :current_score.copy(),"odds" : odds.copy()}]}})
+                        live_market_ids.append(market_id)
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                     logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                 daily_tennis_data[player_key][market_id]["final_stat"] = final_stat.copy()
-                print(f"updating {market_id} to final_stat")
-                logging.info(f"updating {market_id} to final_stat")
-                pprint(daily_tennis_data[player_key][market_id]["final_stat"])
             elif key1_in_data:
                 if status != "CLOSED":
-                    print(f"Updating {market_id} to list")
-                    logging.info(f"Updating {market_id} to list")
                     if market_id in daily_tennis_data[player_key1].keys():
                         daily_tennis_data[player_key1][market_id]["score_odd_list"].append({"current_score" : current_score1.copy(),"odds" : odds1.copy()})
                     else:
                         daily_tennis_data[player_key1].update({market_id : {"market_name"    : market_name,
                                                                             "score_odd_list" : [{"current_score" : current_score1.copy(),"odds" : odds1.copy()}]}})
+                        live_market_ids.append(market_id)
                 if final_stat[0] != 0 or final_stat[1] != 0 :
                     print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                     logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} : closing {market_id} in daily tennis data")
                 daily_tennis_data[player_key1][market_id]["final_stat"] = final_stat1.copy()
-                print(f"updating {market_id} to final_stat")
-                logging.info(f"updating {market_id} to final_stat")
-                pprint(daily_tennis_data[player_key][market_id]["final_stat"])
 
-
-    pprint(live_market_ids)
-    logging.info(live_market_ids)
 
     for market_id in live_market_ids:
         market_id_found = False
@@ -510,15 +497,6 @@ get_odds_error = False
 
 current_day = datetime.now()
 
-with open("game_set_info_after.json","r") as f:
-    game_set_info = json.load(f)
-
-with open("latest_odds_after.json","r") as f:
-    latest_odds = json.load(f)
-
-prepare_daily_data()
-exit()
-
 count = 0
 while True:
     daily_tennis_data_current = daily_tennis_data.copy()
@@ -563,7 +541,6 @@ while True:
             break
     
     ## Check that finished games cannot re start
-
     for game in daily_tennis_data.keys():
         for market_id in daily_tennis_data[game].keys():
             if market_id in market_ids_before:
@@ -577,7 +554,7 @@ while True:
         if error :
             break
 
-    if error:
+    if error:        
         with open("daily_tennis_data_before.json","w") as f:
             json.dump(daily_tennis_data_current,f)
         with open("daily_tennis_data_after.json","w") as f:
@@ -598,26 +575,21 @@ while True:
             json.dump(latest_odds,f) 
         exit()        
         
-
-
-
     get_set_error = False
     get_odds_error = False
     with open(f"{HOME}/script_stat/daily_tennis_data/shutdown","r") as f:
         file_lines = f.readlines()
 
     if int(file_lines[0]) == 1:
+        print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} shutdown of the script")
         logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} shutdown of the script")
         with open(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_data.json","w") as f:
             json.dump(daily_tennis_data,f)
             break
 
-    # if current_day.day != datetime.now().day:
-    #     logging.info(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} dumping the current full snapshot")
-    #     with open(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_full_snap_shot.json","w") as f:
-    #         json.dump(daily_tennis_data,f)
-    #     store_data(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_data.json")
-    #     current_day = datetime.now()
+    if current_day.day != datetime.now().day:
+        store_data(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_data.json")
+        current_day = datetime.now()
     time.sleep(10)
     # count +=1 
     # if count >= 1:
