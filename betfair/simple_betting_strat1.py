@@ -41,7 +41,7 @@ def element_present(driver,id):
     return 
 
 HOME = os.getenv("HOME")
-logging.basicConfig(level=logging.INFO,filemode="w",filename=f"{HOME}/script_stat/basic_betting/status.log")  # change to DEBUG to see log all updates
+logging.basicConfig(level=logging.INFO,filemode="w",filename=f"{HOME}/script_stat/basic_betting1/status.log")  # change to DEBUG to see log all updates
 
 
 def get_latest_odds():
@@ -164,127 +164,6 @@ def get_latest_odds():
 
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live odds")
 
-def get_live_scores():
-    global game_set_info
-    game_set_info = {}
-    print(f"{datetime.now().strftime('%H:%M:%S')} : Started live scores")
-
-
-    
-    firefox_path = f"{HOME}/webdriver/geckodriver"
-    firefox_option = Options()
-    firefox_option.add_argument("--headless")
-    firefox_option.add_argument("--window-size=1920,1080")
-    profile_path = f"{HOME}/browser_profiles/firefox"
-
-    firefox_option.profile = profile_path
-    
-    
-    s=Service(executable_path=firefox_path,log_path=os.devnull)
-
-    if selenium.__version__ == "3.14.0" :
-        driver = webdriver.Firefox(executable_path=firefox_path,options=firefox_option,
-                                   service_log_path=os.devnull)
-    else:
-        driver = webdriver.Firefox(options=firefox_option,service=s)
-
-    driver.get("https://www.betfair.com/exchange/plus/inplay/tennis")
-    element_clickable(driver,'.//ours-button/a[text()="Tennis"]')
-
-    games_loaded = False
-    while True:
-        if selenium.__version__ == "3.14.0":
-            game_list = driver.find_elements_by_xpath(".//a[@class='mod-link']")
-        else:
-            game_list = driver.find_elements(By.XPATH,".//a[@class='mod-link']")
-        for game in game_list:
-            if selenium.__version__ == "3.14.0":
-                try:
-                    set_home = game.find_element_by_xpath(".//span[@class='home']")
-                    games_loaded = True
-                except:
-                    continue
-            else:
-                try:
-                    set_home = game.find_element(By.XPATH,".//span[@class='home']")
-                    games_loaded = True
-                except:
-                    continue
-
-        if len(game_list) == 0 or not games_loaded:
-            time.sleep(1) 
-        else:
-            break      
-
-    count = 0
-    game_keys = []
-    while True:
-        print(f"{datetime.now().strftime('%d:%m:%Y:%H:%M')} searching game {count}")
-        found_new_game = False
-        if selenium.__version__ == "3.14.0":
-            game_list = driver.find_elements_by_xpath(".//a[@class='mod-link']")
-        else:
-            game_list = driver.find_elements(By.XPATH,".//a[@class='mod-link']")
-
-        for game in game_list:
-            view_element(driver,game)
-            if selenium.__version__ == "3.14.0":
-                try:
-                    set_home = int(game.find_element_by_xpath(".//span[@class='home']").text)
-                except:
-                    continue
-                set_away = int(game.find_element_by_xpath(".//span[@class='away']").text)
-                try:
-                    current_score_home = int(game.find_element_by_xpath(".//div[@class='home']").text)
-                    current_score_away = int(game.find_element_by_xpath(".//div[@class='away']").text)
-                except:
-                    current_score_home = 0
-                    current_score_away = 0
-                runner_list = game.find_elements_by_xpath(".//ul[@class='runners']/li")
-                home_runner = runner_list[0].text
-                away_runner = runner_list[1].text
-            else:
-                try:
-                    set_home = int(game.find_element(By.XPATH,".//span[@class='home']").text)
-                except:
-                    continue
-                set_away = int(game.find_element(By.XPATH,".//span[@class='away']").text)
-                try:
-                    current_score_home = int(game.find_element(By.XPATH,".//div[@class='home']").text)
-                    current_score_away = int(game.find_element(By.XPATH,".//div[@class='away']").text)
-                except:
-                    current_score_home = 0
-                    current_score_away = 0
-                runner_list = game.find_elements(By.XPATH,".//ul[@class='runners']/li")
-                home_runner = runner_list[0].text
-                away_runner = runner_list[1].text
-
-            game_set_key = f"{home_runner} v {away_runner}"
-            if game_set_key not in game_keys:
-                found_new_game = True
-                game_keys.append(game_set_key)
-
-            current_score = [[set_home,current_score_home],[set_away,current_score_away]]
-            if game_set_key in game_set_info.keys():
-                if current_score != game_set_info[game_set_key]:
-                    print(f"{game_set_key} : current_score is not equal to the one which exists")
-            else:
-                game_set_info.update({game_set_key : current_score})
-
-        if not found_new_game:
-            break
-        
-        if count >= 100:
-            break
-        count += 1
-
-    try:
-        driver.quit()
-    except:
-        pass
-
-    print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live scores")
-
 def track_market_ids():
     global market_id_tracker
     global market_id_tracker_status
@@ -362,13 +241,6 @@ def track_market_ids():
 
 
 def get_current_set_odd_sample():
-    HOME = os.getenv("HOME")
-    lock = FileLock(f"{HOME}/serialise")
-    lock.acquire()
-    print(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-    logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-    t=threading.Thread(target=get_live_scores)
-    t.start()
 
     t1 = threading.Thread(target=get_latest_odds)
     t1.start()
@@ -376,19 +248,8 @@ def get_current_set_odd_sample():
     t2 = threading.Thread(target=track_market_ids)
     t2.start()
 
-    t.join()
-
-    lock.release()
-    print(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-    logging.info(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-
     t1.join()
     t2.join()
-
-
-#def place_track():
-    
-
 
 
 def track_bets():
@@ -441,7 +302,6 @@ def track_bets():
 
 
 def place_bet():
-    global game_set_info
     global latest_odds
     global market_id_tracker
     global full_cash 
@@ -533,81 +393,21 @@ def place_bet():
         if found_odd0:
             selection_id = selection_id0
             bet_price = bet_price0
-            player = 0
         elif found_odd1:
             selection_id = selection_id1
             bet_price = bet_price1
-            player = 1
         else:
             continue
 
-        market_name = latest_odds[market_id]["market_name"]
-        players = latest_odds[market_id]["players"]
-        player_key1  = f"{players[0]} v {players[1]}"
-        player_key2 = f"{players[1]} v {players[0]}"
 
-        key1_in_set = player_key1 in game_set_info.keys()
-        key2_in_set = player_key2 in game_set_info.keys()
+        pprint(f"placing bet on maket_id : {market_id} id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
+        logging.info(f"placing bet on id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
+        market_id_tracker.update({market_id : {"selection_id" : selection_id,
+                                               "bet_price"    : bet_price,
+                                               "cash_to_bet"  : cash_to_bet}})
+        avail_cash -= cash_to_bet
+      
 
-        key_in_set = key1_in_set or key2_in_set
-
-        if key1_in_set:
-            player_key = player_key1
-        else:
-            player_key = player_key2
-
-        # If the players info is not in game set info then continue
-        if not key_in_set:
-            continue        
- 
-        set_info = (game_set_info[player_key][0][0],game_set_info[player_key][1][0])
-        game_info = (game_set_info[player_key][0][1],game_set_info[player_key][1][1])
-
-        if market_name == "Match Odds":
-            if player == 0:
-                if set_info[0] > set_info[1]:
-                    pprint(f"placing bet on maket_id : {market_id} id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    logging.info(f"placing bet on id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    market_id_tracker.update({market_id : {"selection_id" : selection_id,
-                                                           "bet_price"    : bet_price,
-                                                           "cash_to_bet"  : cash_to_bet}})
-                    avail_cash -= cash_to_bet
-                    
-                else:
-                    continue
-            else:
-                if set_info[1] > set_info[0]:
-                    pprint(f"placing bet on market_id : {market_id} id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    logging.info(f"placing bet on id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    market_id_tracker.update({market_id : {"selection_id" : selection_id,
-                                                           "bet_price"    : bet_price,
-                                                           "cash_to_bet"  : cash_to_bet}})
-                    avail_cash -= cash_to_bet
-                else:
-                    continue
-        else:
-            if player == 0:
-                if game_info[0] - game_info[1] >= 2:
-                    pprint(f"placing bet on id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    logging.info(f"placing bet on market_id : {market_id} id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    market_id_tracker.update({market_id : {"selection_id" : selection_id,
-                                                           "bet_price"    : bet_price,
-                                                           "cash_to_bet"  : cash_to_bet}})
-                    avail_cash -= cash_to_bet
-                else:
-                    continue
-            else:
-                if game_info[1] - game_info[0] >= 2:
-                    pprint(f"placing bet on id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    logging.info(f"placing bet on market_id : {market_id} id : {selection_id} price {bet_price} cash to bet {cash_to_bet}")
-                    market_id_tracker.update({market_id : {"selection_id" : selection_id,
-                                                           "bet_price"    : bet_price,
-                                                           "cash_to_bet"  : cash_to_bet}})
-                    avail_cash -= cash_to_bet
-                else:
-                    continue          
-
-game_set_info = {}
 latest_odds = {}
 market_id_tracker = {}
 market_id_tracker_status = {}
@@ -623,17 +423,16 @@ while True:
     place_bet()
     track_bets()
     if datetime.now().day != current_date.day:
-        if os.path.exists(f"{HOME}/script_stat/basic_betting/status_prev.log"):
-            os.remove(f"{HOME}/script_stat/basic_betting/status_prev.log")
-        shutil.move(f"{HOME}/script_stat/basic_betting/status.log",f"{HOME}/script_stat/basic_betting/status_prev.log")
-        file_handler = logging.FileHandler(f"{HOME}/script_stat/basic_betting/status.log")
+        if os.path.exists(f"{HOME}/script_stat/basic_betting1/status_prev.log"):
+            os.remove(f"{HOME}/script_stat/basic_betting1/status_prev.log")
+        shutil.move(f"{HOME}/script_stat/basic_betting1/status.log",f"{HOME}/script_stat/basic_betting1/status_prev.log")
+        file_handler = logging.FileHandler(f"{HOME}/script_stat/basic_betting1/status.log")
         log = logging.getLogger()
         for hndler in log.handlers:
             if isinstance(hndler,logging.FileHandler):
                 log.removeHandler(hndler)
         log.addHandler(file_handler)
     time.sleep(10)
-
 
     
 
