@@ -1,9 +1,11 @@
 import logging
 from pprint import pprint
+import shutil
 import betfairlightweight
 import os
 from datetime import datetime
 import json
+from numpy import isin
 import selenium
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
@@ -167,11 +169,7 @@ def get_live_scores():
     game_set_info = {}
     print(f"{datetime.now().strftime('%H:%M:%S')} : Started live scores")
 
-    HOME = os.getenv("HOME")
-    lock = FileLock(f"{HOME}/serialise")
-    lock.acquire()
 
-    print(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
     
     firefox_path = f"{HOME}/webdriver/geckodriver"
     firefox_option = Options()
@@ -285,8 +283,6 @@ def get_live_scores():
     except:
         pass
 
-    lock.release()
-    print(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live scores")
 
 def track_market_ids():
@@ -366,6 +362,11 @@ def track_market_ids():
 
 
 def get_current_set_odd_sample():
+    HOME = os.getenv("HOME")
+    lock = FileLock(f"{HOME}/serialise")
+    lock.acquire()
+    print(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+    logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
     t=threading.Thread(target=get_live_scores)
     t.start()
 
@@ -376,8 +377,14 @@ def get_current_set_odd_sample():
     t2.start()
 
     t.join()
+
+    lock.release()
+    print(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+    logging.info(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+
     t1.join()
     t2.join()
+
 
 #def place_track():
     
@@ -615,12 +622,40 @@ avail_cash = 100
 total_lost_cash = 0
 total_won_cash = 0
 
+current_date = datetime.now()
 while True:
     pprint(f"full cash {full_cash} avail_cash {avail_cash} lost_cash {total_lost_cash} won_cash {total_won_cash}")
     get_current_set_odd_sample()
     place_bet()
     track_bets()
+    if datetime.now().day != current_date.day:
+        if os.path.exists(f"{HOME}/script_stat/basic_betting/status_prev.log"):
+            os.remove(f"{HOME}/script_stat/basic_betting/status_prev.log")
+        shutil.move(f"{HOME}/script_stat/basic_betting/status.log",f"{HOME}/script_stat/basic_betting/status_prev.log")
+        file_handler = logging.FileHandler(f"{HOME}/script_stat/basic_betting/status.log")
+        log = logging.getLogger()
+        for hndler in log.handlers:
+            if isinstance(hndler,logging.FileHandler):
+                log.removeHandler(hndler)
+        log.addHandler(file_handler)
     time.sleep(10)
+
+logging.info("I am here")
+logging.info("I am here 2")
+if os.path.exists(f"{HOME}/script_stat/basic_betting/status_prev.log"):
+    os.remove(f"{HOME}/script_stat/basic_betting/status_prev.log")
+shutil.move(f"{HOME}/script_stat/basic_betting/status.log",f"{HOME}/script_stat/basic_betting/status_prev.log")
+file_handler = logging.FileHandler(f"{HOME}/script_stat/basic_betting/status.log","w")
+log = logging.getLogger()
+for hndler in log.handlers:
+    if isinstance(hndler,logging.FileHandler):
+        log.removeHandler(hndler)
+
+log.addHandler(file_handler)
+
+logging.info("I am here 3")
+logging.info("I am here 4")
+
     
 
 

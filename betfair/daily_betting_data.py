@@ -15,6 +15,7 @@ import re
 import time
 import threading
 from filelock import FileLock
+import shutil
 
 def element_click(driver,id):
     element = WebDriverWait(driver, 30).until(
@@ -180,15 +181,6 @@ def get_live_scores():
     game_set_info_snapshot = game_set_info.copy()
     for game in game_set_info.keys():
         game_set_info[game]["sample"] = False
-
-
-    HOME = os.getenv("HOME")
-    lock = FileLock(f"{HOME}/serialise")
-    lock.acquire()
-
-    print(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-    logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-
     
     firefox_path = f"{HOME}/webdriver/geckodriver"
     firefox_option = Options()
@@ -311,9 +303,7 @@ def get_live_scores():
     except:
         pass
 
-    lock.release()
-    print(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
-    logging.info(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+
     print(f"{datetime.now().strftime('%H:%M:%S')} : Completed live scores")
     logging.info(f"{datetime.now().strftime('%H:%M:%S')} : Completed live scores")
 
@@ -322,12 +312,22 @@ def get_current_set_odd_sample():
     global live_market_ids
     global latest_odds
 
+    HOME = os.getenv("HOME")
+    lock = FileLock(f"{HOME}/serialise")
+    lock.acquire()
+
+    print(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+    logging.info(f"Lock acquired at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+
     t=threading.Thread(target=get_live_scores)
     t.start()
 
     t1 = threading.Thread(target=get_latest_odds)
     t1.start()
     t.join()
+    lock.release()
+    print(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
+    logging.info(f"Lock released at {datetime.now().strftime('%d/%m/%Y:%H:%M')}")
     t1.join()
 
 
@@ -590,6 +590,15 @@ while True:
     if current_day.day != datetime.now().day:
         store_data(f"{HOME}/database/tennis/live_data/{current_day.strftime('%d_%m_%Y')}_data.json")
         current_day = datetime.now()
+        if os.path.exists(f"{HOME}/script_stat/daily_tennis_data/status_prev.log"):
+            os.remove(f"{HOME}/script_stat/daily_tennis_data/status_prev.log")
+        shutil.move(f"{HOME}/script_stat/daily_tennis_data/status.log",f"{HOME}/script_stat/basic_betting/status_prev.log")
+        file_handler = logging.FileHandler(f"{HOME}/script_stat/daily_tennis_data/status.log")
+        log = logging.getLogger()
+        for hndler in log.handlers:
+            if isinstance(hndler,logging.FileHandler):
+                log.removeHandler(hndler)
+        log.addHandler(file_handler)
     time.sleep(10)
     # count +=1 
     # if count >= 1:
