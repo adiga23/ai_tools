@@ -275,21 +275,19 @@ def track_bets():
             cash_generated = market_id_tracker[market_id]["bet_price"] * market_id_tracker[market_id]["cash_to_bet"] * 0.95
             pprint(f"market_id {market_id} won the bet and generated cash {cash_generated}")
             logging.info(f"market_id {market_id} won the bet and generated cash {cash_generated}")
-            market_id_tracker.pop(market_id)
             ## Add the cash generated to the available cash
             avail_cash += cash_generated
             ## Add profit to full cash
             full_cash += (cash_generated - market_id_tracker[market_id]["cash_to_bet"])
             total_won_cash += (cash_generated - market_id_tracker[market_id]["cash_to_bet"])
+            market_id_tracker.pop(market_id)
         else:
             cash_lost = market_id_tracker[market_id]["cash_to_bet"]
             pprint(f"market_id {market_id} lost the bet and generated cash {cash_lost}")
             logging.info(f"market_id {market_id} won the bet and generated cash {cash_lost}")
-            market_id_tracker.pop(market_id)
             full_cash -= cash_lost
             total_lost_cash += cash_lost
-
-
+            market_id_tracker.pop(market_id)
 
 def place_bet():
     global latest_odds
