@@ -401,26 +401,15 @@ def track_bets():
 
     for market_id in market_id_tracker_status.keys():
         ## if the odds have not been completed wait
-        if market_id_tracker[market_id]["status"] != "CLOSED":
-            continue
-        if market_id_tracker_status[market_id]["runners"] == []:
-            continue
         if market_id not in market_id_tracker.keys():
             continue
-        selection_id_found = False
-        selection = 0
-        if market_id_tracker[market_id]["selection_id"] == market_id_tracker_status[market_id]["runners"][0]["selection_id"]:
-            selection_id_found = True
-            selection = 0
-        elif market_id_tracker[market_id]["selection_id"] == market_id_tracker_status[market_id]["runners"][1]["selection_id"]:
-            selection_id_found = True
-            selection = 1
+        selection_id = market_id_tracker[market_id]["selection_id"]
 
-        if not selection_id_found:
-            pprint(f"selection id {market_id_tracker_status[market_id]['selction_id']} not found in market_id {market_id}")
-            logging.info(f"selection id {market_id_tracker_status[market_id]['selction_id']} not found in market_id {market_id}")
+        if selection_id not in market_id_tracker_status[market_id].keys():
+            pprint(f"selection id {selection_id} not found in market_id {market_id}")
+            logging.info(f"selection id {selection_id} not found in market_id {market_id}")
                
-        if market_id_tracker_status[market_id]["runners"][selection]["status"] == "WINNER":
+        if market_id_tracker_status[market_id][selection_id]:
             cash_generated = market_id_tracker[market_id]["bet_price"] * market_id_tracker[market_id]["cash_to_bet"] * 0.95
             pprint(f"market_id {market_id} won the bet and generated cash {cash_generated}")
             logging.info(f"market_id {market_id} won the bet and generated cash {cash_generated}")
