@@ -55,6 +55,8 @@ HOME = os.getenv("HOME")
 logging.basicConfig(level=logging.INFO,filemode="w",filename=f"{HOME}/script_stat/whatsapp/status.log")  # change to DEBUG to see log all updates
 
 def send_good_morning_msg():
+
+
     firefox_path = f"{HOME}/webdriver/geckodriver"
     firefox_option = Options()
     firefox_option.add_argument("--headless")
@@ -96,7 +98,20 @@ def send_good_morning_msg():
         element_click_send_key(driver,".//div[@title='Type a message']","Goood Morning")
         element_click(driver,".//button[.//span[@data-icon='send']]")
     
-    logging.info("Good morning message sent")
+    logging.info(f"{datetime.now().strftime('%d_%m_%Y')} Good morning message sent")
     driver.quit()
 
-send_good_morning_msg()
+
+HOME = os.getenv("HOME")
+lock = FileLock(f"{HOME}/serialise")
+lock.acquire()
+
+logging.info(f"{datetime.now().strftime('%d_%m_%Y')} Lock Acquired")
+try:
+    send_good_morning_msg()
+except Exception as e :
+    pprint(e)
+    logging.info(f"{datetime.now().strftime('%d_%m_%Y')} There was an exception")
+
+lock.release()
+logging.info(f"{datetime.now().strftime('%d_%m_%Y')} Lock released")
